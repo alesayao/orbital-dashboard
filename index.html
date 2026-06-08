@@ -24,7 +24,6 @@
     font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;padding:env(safe-area-inset-top) 0 40px;}
   .wrap{max-width:1040px;margin:0 auto;padding:16px;}
-  /* gate */
   #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
   #gate .box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;max-width:380px;width:100%;}
   #gate h2{margin:0 0 6px;font-size:18px}
@@ -32,33 +31,27 @@
   #gate input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font-size:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
   #gate button,.btn{margin-top:12px;width:100%;padding:11px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
   #gate .err{color:var(--red);font-size:12px;margin-top:8px;min-height:14px}
-  /* header */
   header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
   header.top h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
   .state{color:var(--muted);font-size:13.5px;margin-top:3px;max-width:70ch}
   .meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
   .updated{color:var(--muted);font-size:11.5px;text-align:right}
   .refresh{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 9px;cursor:pointer;font-size:13px}
-  /* sections */
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px}
   .card h2{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
   .badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--line);color:var(--ink)}
-  /* focus */
   .focus{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .focus .f{background:linear-gradient(180deg,transparent,rgba(37,99,235,.04));border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14.5px;font-weight:600;display:flex;gap:9px}
   .focus .n{color:var(--accent);font-weight:800}
-  /* two col */
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  /* agenda */
   .days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .day h3{margin:0 0 6px;font-size:11.5px;font-weight:700;color:var(--muted);position:sticky}
+  .day h3{margin:0 0 6px;font-size:11.5px;font-weight:700;color:var(--muted)}
   .ev{border-left:3px solid var(--accent);background:rgba(37,99,235,.05);padding:7px 9px;border-radius:0 8px 8px 0;margin-bottom:6px}
   .ev .t{font-weight:700;font-size:12.5px;color:var(--muted)}
   .ev .ti{font-size:13.5px;font-weight:600}
   .ev .p{font-size:11.5px;color:var(--muted)}
   .ev .flag{margin-top:4px;font-size:11.5px;font-weight:700;color:var(--red);background:var(--red-bg);padding:2px 6px;border-radius:6px;display:inline-block}
   .empty{color:var(--muted);font-size:12.5px;font-style:italic;padding:6px 0}
-  /* tasks */
   .tk{padding:8px 0;border-bottom:1px solid var(--line)}
   .tk:last-child{border:0}
   .tk .lab{font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:5px;margin-right:7px;text-transform:uppercase}
@@ -66,11 +59,9 @@
   .lab.over{background:var(--red-bg);color:var(--redk)}
   .lab.fu{background:var(--orange-bg);color:var(--orange)}
   .tk .sub{color:var(--muted);font-size:12px;margin-top:2px}
-  /* digest */
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .chip{background:var(--purple-bg);color:var(--purple);font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px}
   .dmeta{color:var(--muted);font-size:12.5px}
-  /* signals */
   .sig{display:flex;flex-wrap:wrap;gap:18px;color:var(--muted);font-size:13px}
   .sig b{color:var(--ink);font-size:16px;font-weight:800;margin-right:4px}
   details.raw{margin-top:6px}
@@ -91,7 +82,7 @@
     <h2>☀️ Orbital · Hoje</h2>
     <p>Cole o token de acesso (X-Orbital-Token). Fica salvo só neste aparelho.</p>
     <input id="tok" type="password" placeholder="token…" autocomplete="off" />
-    <button id="enter">Entrar</button>
+    <button id="btnEnter" type="button">Entrar</button>
     <div class="err" id="gateErr"></div>
   </div>
 </div>
@@ -104,127 +95,131 @@
     </div>
     <div class="meta">
       <div class="updated" id="updated"></div>
-      <button class="refresh" id="refresh" title="Atualizar">⟳</button>
+      <button class="refresh" id="btnRefresh" type="button" title="Atualizar">⟳</button>
     </div>
   </header>
   <div id="content"></div>
 </div>
 
 <script>
-const API = "https://inspiragoglobal.com.br/api/orbital/all";
-const LS = "orbital_token";
-const $ = (id)=>document.getElementById(id);
-const esc = (s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+(function(){
+  "use strict";
+  var API="https://inspiragoglobal.com.br/api/orbital/all";
+  var LS="orbital_token";
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
 
-function agoStr(iso){
-  if(!iso) return "";
-  const d=(Date.now()-new Date(iso).getTime())/1000;
-  if(d<90) return "agora";
-  if(d<5400) return "há "+Math.round(d/60)+" min";
-  if(d<172800) return "há "+Math.round(d/3600)+" h";
-  return "há "+Math.round(d/86400)+" d";
-}
+  function getTok(){ try{return localStorage.getItem(LS);}catch(e){return window.__tok||null;} }
+  function setTok(v){ try{localStorage.setItem(LS,v);}catch(e){window.__tok=v;} }
+  function clrTok(){ try{localStorage.removeItem(LS);}catch(e){} window.__tok=null; }
 
-function showGate(msg){
-  $("app").hidden=true; $("gate").hidden=false;
-  if(msg) $("gateErr").textContent=msg;
-  $("tok").focus();
-}
-function enter(){
-  const v=$("tok").value.trim();
-  if(!v){ $("gateErr").textContent="Cole o token."; return; }
-  localStorage.setItem(LS,v); $("gate").hidden=true; load();
-}
-$("enter").onclick=enter;
-$("tok").addEventListener("keydown",e=>{if(e.key==="Enter")enter();});
-$("refresh").onclick=()=>load();
-
-async function load(){
-  const tok=localStorage.getItem(LS);
-  if(!tok){ showGate(); return; }
-  $("app").hidden=false;
-  try{
-    const r=await fetch(API,{headers:{"X-Orbital-Token":tok}});
-    if(r.status===401){ localStorage.removeItem(LS); showGate("Token inválido. Tente de novo."); return; }
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    const j=await r.json();
-    render(j.snapshot||{});
-  }catch(e){
-    $("content").innerHTML='<div class="err-banner">Falha ao carregar: '+esc(e.message)+'. Toque em ⟳.</div>';
-  }
-}
-
-function render(s){
-  const b=s.briefing?.data||{}, t=s.tasks?.data||{}, d=s.digest?.data||{}, sig=s.signals?.data||{};
-  $("dateLabel").textContent="☀️ "+(b.date_label||"Hoje");
-  $("stateLine").textContent=b.state_line||"";
-  $("updated").textContent=s.briefing?.createdAt?("atualizado "+agoStr(s.briefing.createdAt)):"";
-  let h="";
-
-  // Foco
-  if(Array.isArray(b.focus_today)&&b.focus_today.length){
-    const nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
-    h+=card("🎯 Foco do dia",
-      (nU?`<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 ${nU}</span> `:"")+
-      (nD?`<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 ${nD}</span>`:""),
-      `<div class="focus">`+b.focus_today.map((f,i)=>`<div class="f"><span class="n">${i+1}</span><span>${esc(f)}</span></div>`).join("")+`</div>`);
+  function ago(iso){
+    if(!iso) return "";
+    var d=(Date.now()-new Date(iso).getTime())/1000;
+    if(d<90) return "agora";
+    if(d<5400) return "há "+Math.round(d/60)+" min";
+    if(d<172800) return "há "+Math.round(d/3600)+" h";
+    return "há "+Math.round(d/86400)+" d";
   }
 
-  // 2 colunas: agenda | tasks
-  h+=`<div class="cols">`;
-  // Agenda
-  let ag="";
-  if(Array.isArray(b.calendar)&&b.calendar.length){
-    ag=`<div class="days">`+b.calendar.map(day=>{
-      const evs=(day.events||[]);
-      const inner=evs.length? evs.map(e=>`
-        <div class="ev">
-          <div class="t">${esc(e.time||"")}</div>
-          <div class="ti">${esc(e.title||"")}</div>
-          ${(e.participants&&e.participants.length)?`<div class="p">${esc(e.participants.join(", "))}</div>`:""}
-          ${(e.flags&&e.flags.length)?e.flags.map(f=>`<div class="flag">⚠️ ${esc(f)}</div>`).join(""):""}
-        </div>`).join("") : `<div class="empty">livre</div>`;
-      return `<div class="day"><h3>${esc(day.label||day.date||"")}</h3>${inner}</div>`;
-    }).join("")+`</div>`;
-  } else ag=`<div class="empty">Sem agenda.</div>`;
-  h+=card("📅 Agenda · 3 dias","",ag,true);
-
-  // Tasks
-  let tk="";
-  (t.p1||[]).forEach(x=>tk+=`<div class="tk"><span class="lab p1">P1</span>${esc(x.title)}${x.due?`<div class="sub">vence ${esc(x.due)}</div>`:""}</div>`);
-  (t.overdue||[]).forEach(x=>tk+=`<div class="tk"><span class="lab over">overdue</span>${esc(x.title)}${x.since?`<div class="sub">desde ${esc(x.since)}</div>`:""}</div>`);
-  (t.cold_followups||[]).forEach(x=>tk+=`<div class="tk"><span class="lab fu">followup ${x.days!=null?x.days+"d":""}</span>${esc(x.name)}${x.context?`<div class="sub">${esc(x.context)}</div>`:""}</div>`);
-  if(!tk) tk=`<div class="empty">Nada pendente.</div>`;
-  h+=card("📋 Tasks","",tk,true);
-  h+=`</div>`; // /cols
-
-  // Digest
-  if(d.new_pages||d.new_decisions!=null||d.meetings!=null){
-    const chips=(d.new_pages||[]).map(p=>`<span class="chip">+ ${esc(p)}</span>`).join("");
-    h+=card("🧠 O cérebro aprendeu",d.since?`<span class="badge">desde ${esc(d.since)}</span>`:"",
-      (chips?`<div class="chips">${chips}</div>`:"")+
-      `<div class="dmeta">${d.new_decisions!=null?d.new_decisions+" decisões · ":""}${d.meetings!=null?d.meetings+" reuniões ingeridas":""}</div>`);
+  function showGate(msg){
+    $("app").hidden=true; $("gate").hidden=false;
+    if(msg) $("gateErr").textContent=msg;
+    try{$("tok").focus();}catch(e){}
   }
 
-  // Signals
-  const sg=[];
-  if(sig.open_p1!=null) sg.push(`<span><b>${sig.open_p1}</b>P1 abertos</span>`);
-  if(sig.cold_followups!=null) sg.push(`<span><b>${sig.cold_followups}</b>followups frios</span>`);
-  if(sig.wiki_pages!=null) sg.push(`<span><b>${sig.wiki_pages}</b>páginas wiki</span>`);
-  if(sig.decisions!=null) sg.push(`<span><b>${sig.decisions}</b>decisões</span>`);
-  if(sg.length) h+=card("📊 Métricas","",`<div class="sig">${sg.join("")}</div>`);
+  function submitToken(){
+    var v=($("tok").value||"").trim();
+    if(!v){ $("gateErr").textContent="Cole o token."; return; }
+    setTok(v);
+    $("gate").hidden=true;
+    load();
+  }
 
-  // Fallback markdown
-  if(b.summary_md) h+=`<div class="card"><details class="raw"><summary>Ver brief completo</summary><pre>${esc(b.summary_md)}</pre></details></div>`;
+  function load(){
+    var tok=getTok();
+    if(!tok){ showGate(); return; }
+    $("app").hidden=false;
+    $("content").innerHTML='<div class="empty">Carregando…</div>';
+    fetch(API,{headers:{"X-Orbital-Token":tok}})
+      .then(function(r){
+        if(r.status===401){ clrTok(); showGate("Token inválido. Tente de novo."); return null; }
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        return r.json();
+      })
+      .then(function(j){ if(j) render(j.snapshot||{}); })
+      .catch(function(e){
+        $("content").innerHTML='<div class="err-banner">Falha ao carregar: '+esc(e.message)+'. Toque em ⟳.</div>';
+      });
+  }
 
-  $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
-}
+  function card(title,right,body){
+    return '<div class="card"><h2>'+title+(right?'<span style="margin-left:auto">'+right+'</span>':'')+'</h2>'+body+'</div>';
+  }
 
-function card(title,right,body,plain){
-  return `<div class="card"><h2>${title}${right?`<span style="margin-left:auto">${right}</span>`:""}</h2>${body}</div>`;
-}
+  function render(s){
+    var b=(s.briefing&&s.briefing.data)||{}, t=(s.tasks&&s.tasks.data)||{},
+        d=(s.digest&&s.digest.data)||{}, sig=(s.signals&&s.signals.data)||{};
+    $("dateLabel").textContent="☀️ "+(b.date_label||"Hoje");
+    $("stateLine").textContent=b.state_line||"";
+    $("updated").textContent=(s.briefing&&s.briefing.createdAt)?("atualizado "+ago(s.briefing.createdAt)):"";
+    var h="";
 
-load();
+    if(Array.isArray(b.focus_today)&&b.focus_today.length){
+      var nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
+      var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
+                 (nD?'<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 '+nD+'</span>':'');
+      h+=card("🎯 Foco do dia",badges,
+        '<div class="focus">'+b.focus_today.map(function(f,i){return '<div class="f"><span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
+    }
+
+    h+='<div class="cols">';
+    var ag;
+    if(Array.isArray(b.calendar)&&b.calendar.length){
+      ag='<div class="days">'+b.calendar.map(function(day){
+        var evs=day.events||[];
+        var inner=evs.length? evs.map(function(e){
+          return '<div class="ev"><div class="t">'+esc(e.time||"")+'</div><div class="ti">'+esc(e.title||"")+'</div>'+
+            ((e.participants&&e.participants.length)?'<div class="p">'+esc(e.participants.join(", "))+'</div>':'')+
+            ((e.flags&&e.flags.length)?e.flags.map(function(f){return '<div class="flag">⚠️ '+esc(f)+'</div>';}).join(""):'')+'</div>';
+        }).join("") : '<div class="empty">livre</div>';
+        return '<div class="day"><h3>'+esc(day.label||day.date||"")+'</h3>'+inner+'</div>';
+      }).join("")+'</div>';
+    } else ag='<div class="empty">Sem agenda.</div>';
+    h+=card("📅 Agenda · 3 dias","",ag);
+
+    var tk="";
+    (t.p1||[]).forEach(function(x){tk+='<div class="tk"><span class="lab p1">P1</span>'+esc(x.title)+(x.due?'<div class="sub">vence '+esc(x.due)+'</div>':'')+'</div>';});
+    (t.overdue||[]).forEach(function(x){tk+='<div class="tk"><span class="lab over">overdue</span>'+esc(x.title)+(x.since?'<div class="sub">desde '+esc(x.since)+'</div>':'')+'</div>';});
+    (t.cold_followups||[]).forEach(function(x){tk+='<div class="tk"><span class="lab fu">followup '+(x.days!=null?x.days+"d":"")+'</span>'+esc(x.name)+(x.context?'<div class="sub">'+esc(x.context)+'</div>':'')+'</div>';});
+    if(!tk) tk='<div class="empty">Nada pendente.</div>';
+    h+=card("📋 Tasks","",tk);
+    h+='</div>';
+
+    if(d.new_pages||d.new_decisions!=null||d.meetings!=null){
+      var chips=(d.new_pages||[]).map(function(p){return '<span class="chip">+ '+esc(p)+'</span>';}).join("");
+      h+=card("🧠 O cérebro aprendeu",d.since?'<span class="badge">desde '+esc(d.since)+'</span>':'',
+        (chips?'<div class="chips">'+chips+'</div>':'')+
+        '<div class="dmeta">'+(d.new_decisions!=null?d.new_decisions+" decisões · ":"")+(d.meetings!=null?d.meetings+" reuniões ingeridas":"")+'</div>');
+    }
+
+    var sg=[];
+    if(sig.open_p1!=null) sg.push('<span><b>'+sig.open_p1+'</b>P1 abertos</span>');
+    if(sig.cold_followups!=null) sg.push('<span><b>'+sig.cold_followups+'</b>followups frios</span>');
+    if(sig.wiki_pages!=null) sg.push('<span><b>'+sig.wiki_pages+'</b>páginas wiki</span>');
+    if(sig.decisions!=null) sg.push('<span><b>'+sig.decisions+'</b>decisões</span>');
+    if(sg.length) h+=card("📊 Métricas","",'<div class="sig">'+sg.join("")+'</div>');
+
+    if(b.summary_md) h+='<div class="card"><details class="raw"><summary>Ver brief completo</summary><pre>'+esc(b.summary_md)+'</pre></details></div>';
+
+    $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
+  }
+
+  $("btnEnter").addEventListener("click",submitToken);
+  $("tok").addEventListener("keydown",function(e){ if(e.key==="Enter") submitToken(); });
+  $("btnRefresh").addEventListener("click",load);
+  load();
+})();
 </script>
 </body>
 </html>
