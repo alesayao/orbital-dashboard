@@ -99,6 +99,13 @@
   .mail-subj:hover{color:var(--accent);text-decoration:underline}
   .mail-subj.main{color:var(--ink);font-size:13.5px;font-weight:600;white-space:normal}
   .mail-subj.main:hover{color:var(--accent)}
+  /* tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  .tab-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .tab-btn b{font-weight:800;color:var(--ink)}
+  .tab-btn.active{background:var(--ink);color:var(--card);border-color:var(--ink)}
+  .tab-btn.active b{color:var(--card)}
+  .tab-panel[hidden]{display:none}
   /* collapse */
   .card-h{cursor:pointer;user-select:none}
   .caret{display:inline-block;color:var(--muted);font-size:10px;transition:transform .15s;margin-right:2px}
@@ -214,8 +221,11 @@
     return '<div class="card'+cl+'" data-key="'+k+'"><h2 class="card-h"><span class="caret">▸</span>'+title+(right?'<span style="margin-left:auto">'+right+'</span>':'')+'</h2><div class="card-body">'+body+'</div></div>';
   }
 
-  var lastBrief="";
+  var lastBrief="", activeTab=null;
+  try{ activeTab=localStorage.getItem("orbital_tab"); }catch(e){}
   function linkify(text,url){ return url?('<a class="lnk" href="'+esc(url)+'" target="_blank" rel="noopener">'+text+'</a>'):text; }
+  function mailTags(who,topic){ return '<span class="who-tag">'+esc(who||"")+'</span>'+(topic?'<span class="topic-tag">'+esc(topic)+'</span>':''); }
+  function mailSubj(x,main){ var t=esc(x.subject||""); return x.link?'<a class="mail-subj'+(main?' main':'')+'" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+t+'</a>':'<span class="mail-subj'+(main?' main':'')+'">'+t+'</span>'; }
 
   function render(s){
     var b=(s.briefing&&s.briefing.data)||{}, t=(s.tasks&&s.tasks.data)||{},
@@ -235,50 +245,50 @@
         '<div class="focus">'+b.focus_today.map(function(f,i){return '<div class="f"><span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
     }
 
+    // 📥 Central — uma caixa com abas (Urgente / Decisões / Cobrar / Caixa)
+    var tabs=[];
     if(Array.isArray(b.urgent)&&b.urgent.length){
-      h+=card("🔴 Urgente","",b.urgent.map(function(x){
-        var ttl=linkify(esc(x.title||""),x.link);
-        var who=x.who?'<span class="who">'+esc(x.who)+'</span>':'';
-        return '<div class="row"><div class="ti">'+ttl+who+'</div>'+(x.why?'<div class="why">'+esc(x.why)+'</div>':'')+'</div>';
-      }).join(""));
+      tabs.push({key:"urgente",label:"🔴 Urgente",n:b.urgent.length,html:
+        b.urgent.map(function(x){
+          var who=x.who?'<span class="who">'+esc(x.who)+'</span>':'';
+          return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+who+'</div>'+(x.why?'<div class="why">'+esc(x.why)+'</div>':'')+'</div>';
+        }).join("")});
     }
-
     if(Array.isArray(b.decisions)&&b.decisions.length){
-      h+=card("🟡 Decisões","",b.decisions.map(function(x){
-        return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+'</div>'+(x.note?'<div class="why">'+esc(x.note)+'</div>':'')+'</div>';
-      }).join(""));
+      tabs.push({key:"decisoes",label:"🟡 Decisões",n:b.decisions.length,html:
+        b.decisions.map(function(x){
+          return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+'</div>'+(x.note?'<div class="why">'+esc(x.note)+'</div>':'')+'</div>';
+        }).join("")});
     }
-
-    // 📧 Caixa — módulo de 4 lanes (GTD next-action-owner + importância). Fallback p/ b.email simples.
-    if(b.inbox){
-      var ib=b.inbox;
-      var nr=(ib.respond||[]).length, nw=(ib.waiting||[]).length, nu=(ib.unread||[]).length;
-      var sum='<div class="inbox-sum"><span>🔴 '+nr+' responder</span><span>⏳ '+nw+' cobrar</span><span>📬 '+nu+' não lidas</span>'+(ib.rest_count?'<span>⚪ '+ib.rest_count+' resto</span>':'')+'</div>';
-      function tags(who,topic){ return '<span class="who-tag">'+esc(who||"")+'</span>'+(topic?'<span class="topic-tag">'+esc(topic)+'</span>':''); }
-      function subj(x,main){ var t=esc(x.subject||""); return x.link?'<a class="mail-subj'+(main?' main':'')+'" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+t+'</a>':'<span class="mail-subj'+(main?' main':'')+'">'+t+'</span>'; }
-      var body=sum;
-      if(nr){ body+='<div class="lane"><div class="lane-h" style="color:var(--red)">🔴 Sua vez — responder</div>'+
-        ib.respond.map(function(x){
-          return '<div class="mail"><div class="mail-top">'+tags(x.from,x.topic)+(x.age?'<span class="age">'+esc(x.age)+'</span>':'')+'</div>'+
-            (x.action?'<div class="mail-act">'+esc(x.action)+'</div>':'')+subj(x,!x.action)+'</div>';
-        }).join('')+'</div>'; }
-      if(nw){ body+='<div class="lane"><div class="lane-h" style="color:var(--orange)">⏳ Aguardando — cobrar</div>'+
+    var ib=b.inbox||null;
+    if(ib&&(ib.waiting||[]).length){
+      tabs.push({key:"cobrar",label:"⏳ Cobrar",n:ib.waiting.length,html:
         ib.waiting.map(function(x){
           var meta=(x.sent_days!=null?'<span class="age">há '+esc(x.sent_days)+'d</span>':'')+(x.nudge?'<span class="nudge">cobrar</span>':'');
-          return '<div class="mail"><div class="mail-top">'+tags("p/ "+(x.to||""),x.topic)+meta+'</div>'+subj(x,true)+'</div>';
-        }).join('')+'</div>'; }
-      if(nu){ body+='<div class="lane"><div class="lane-h" style="color:var(--muted)">📬 Não lidas relevantes</div>'+
-        ib.unread.map(function(x){
-          return '<div class="mail"><div class="mail-top">'+tags(x.from,x.topic)+'</div>'+subj(x,true)+'</div>';
-        }).join('')+'</div>'; }
-      if(ib.rest_count) body+='<div class="rest">⚪ resto: '+esc(ib.rest_count)+' (FYI / ruído)</div>';
-      h+=card("📧 Caixa","",(nr||nw||nu||ib.rest_count)?body:'<div class="empty">Inbox limpa.</div>');
+          return '<div class="mail"><div class="mail-top">'+mailTags("p/ "+(x.to||""),x.topic)+meta+'</div>'+mailSubj(x,true)+'</div>';
+        }).join("")});
+    }
+    if(ib){
+      var nr=(ib.respond||[]).length, nu=(ib.unread||[]).length, cbody="";
+      if(nr){ cbody+='<div class="lane"><div class="lane-h" style="color:var(--red)">🔴 Sua vez — responder</div>'+
+        ib.respond.map(function(x){
+          return '<div class="mail"><div class="mail-top">'+mailTags(x.from,x.topic)+(x.age?'<span class="age">'+esc(x.age)+'</span>':'')+'</div>'+
+            (x.action?'<div class="mail-act">'+esc(x.action)+'</div>':'')+mailSubj(x,!x.action)+'</div>';
+        }).join("")+'</div>'; }
+      if(nu){ cbody+='<div class="lane"><div class="lane-h" style="color:var(--muted)">📬 Não lidas relevantes</div>'+
+        ib.unread.map(function(x){ return '<div class="mail"><div class="mail-top">'+mailTags(x.from,x.topic)+'</div>'+mailSubj(x,true)+'</div>'; }).join("")+'</div>'; }
+      if(ib.rest_count) cbody+='<div class="rest">⚪ resto: '+esc(ib.rest_count)+' (FYI / ruído)</div>';
+      if(nr||nu||ib.rest_count) tabs.push({key:"caixa",label:"📧 Caixa",n:(nr+nu)||null,html:cbody});
     } else if(Array.isArray(b.email)&&b.email.length){
-      h+=card("📧 Email","",b.email.map(function(x){
-        var dotc=x.level==="red"?"🔴":(x.level==="yellow"?"🟡":"⚪");
-        var inner='<span class="dot">'+dotc+'</span>'+(x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||"");
-        return '<div class="row"><div class="ti">'+linkify(inner,x.link)+'</div>'+(x.action?'<div class="why">'+esc(x.action)+'</div>':'')+'</div>';
-      }).join(""));
+      tabs.push({key:"caixa",label:"📧 Email",n:b.email.length,html:
+        b.email.map(function(x){ var dotc=x.level==="red"?"🔴":(x.level==="yellow"?"🟡":"⚪");
+          return '<div class="row"><div class="ti">'+linkify('<span class="dot">'+dotc+'</span>'+(x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||""),x.link)+'</div>'+(x.action?'<div class="why">'+esc(x.action)+'</div>':'')+'</div>'; }).join("")});
+    }
+    if(tabs.length){
+      var act=activeTab&&tabs.some(function(tb){return tb.key===activeTab;})?activeTab:tabs[0].key;
+      var bar=tabs.map(function(tb){ return '<button class="tab-btn'+(tb.key===act?" active":"")+'" data-tab="'+tb.key+'">'+tb.label+(tb.n!=null?' <b>'+tb.n+'</b>':'')+'</button>'; }).join("");
+      var panels=tabs.map(function(tb){ return '<div class="tab-panel" data-panel="'+tb.key+'"'+(tb.key===act?"":" hidden")+'>'+tb.html+'</div>'; }).join("");
+      h+=card("📥 Central","",'<div class="tabs">'+bar+'</div>'+panels);
     }
 
     h+='<div class="cols">';
@@ -326,9 +336,19 @@
   }
 
   $("content").addEventListener("click",function(e){
+    // troca de aba
+    var tb=e.target.closest&&e.target.closest(".tab-btn");
+    if(tb){
+      var key=tb.getAttribute("data-tab"), wrap=tb.closest(".card-body");
+      [].forEach.call(wrap.querySelectorAll(".tab-btn"),function(b){ b.classList.toggle("active",b===tb); });
+      [].forEach.call(wrap.querySelectorAll(".tab-panel"),function(p){ p.hidden=(p.getAttribute("data-panel")!==key); });
+      activeTab=key; try{ localStorage.setItem("orbital_tab",key); }catch(err){}
+      return;
+    }
+    // colapsar card
     var hd=e.target.closest&&e.target.closest(".card-h");
     if(!hd) return;
-    if(e.target.closest("a")) return; // não colapsa ao clicar em link no header
+    if(e.target.closest("a")) return;
     var c=hd.parentNode, k=c.getAttribute("data-key");
     c.classList.toggle("collapsed");
     collapsed[k]=c.classList.contains("collapsed");
