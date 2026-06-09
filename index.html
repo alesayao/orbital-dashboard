@@ -70,6 +70,23 @@
   details.raw summary{cursor:pointer;color:var(--accent);font-size:12.5px}
   details.raw pre{white-space:pre-wrap;font:12.5px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);padding:10px;border-radius:8px;margin-top:6px}
   .err-banner{background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px}
+  .row{padding:8px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border:0}
+  .row .ti{font-weight:600;font-size:14px}
+  .row .why{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .row .who{font-size:11px;font-weight:700;color:var(--accent);background:rgba(37,99,235,.08);padding:1px 6px;border-radius:5px;margin-left:6px}
+  .dot{font-size:10px;margin-right:6px;vertical-align:middle}
+  a.lnk{color:var(--accent);text-decoration:none}
+  a.lnk:hover{text-decoration:underline}
+  a.evlnk{color:inherit;text-decoration:none}
+  a.evlnk:hover{text-decoration:underline}
+  /* modal */
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:18px}
+  #modal[hidden]{display:none!important}
+  .modal-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 40px rgba(0,0,0,.3);max-width:680px;width:100%;max-height:85vh;display:flex;flex-direction:column}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .modal-head button{border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px}
+  #modalBody{margin:0;padding:16px;overflow:auto;white-space:pre-wrap;font:13px/1.55 ui-monospace,Menlo,monospace}
   @media (max-width:720px){
     .focus{grid-template-columns:1fr}
     .cols{grid-template-columns:1fr}
@@ -97,10 +114,18 @@
     </div>
     <div class="meta">
       <div class="updated" id="updated"></div>
+      <button class="refresh" id="btnBrief" type="button" title="Brief completo">📄 Brief</button>
       <button class="refresh" id="btnRefresh" type="button" title="Atualizar">⟳</button>
     </div>
   </header>
   <div id="content"></div>
+</div>
+
+<div id="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-head"><strong>📄 Brief completo</strong><button id="btnCloseModal" type="button">✕</button></div>
+    <pre id="modalBody"></pre>
+  </div>
 </div>
 
 <script>
@@ -161,12 +186,17 @@
     return '<div class="card"><h2>'+title+(right?'<span style="margin-left:auto">'+right+'</span>':'')+'</h2>'+body+'</div>';
   }
 
+  var lastBrief="";
+  function linkify(text,url){ return url?('<a class="lnk" href="'+esc(url)+'" target="_blank" rel="noopener">'+text+'</a>'):text; }
+
   function render(s){
     var b=(s.briefing&&s.briefing.data)||{}, t=(s.tasks&&s.tasks.data)||{},
         d=(s.digest&&s.digest.data)||{}, sig=(s.signals&&s.signals.data)||{};
     $("dateLabel").textContent="☀️ "+(b.date_label||"Hoje");
     $("stateLine").textContent=b.state_line||"";
     $("updated").textContent=(s.briefing&&s.briefing.createdAt)?("atualizado "+ago(s.briefing.createdAt)):"";
+    lastBrief=b.summary_md||"";
+    $("btnBrief").style.display=lastBrief?"":"none";
     var h="";
 
     if(Array.isArray(b.focus_today)&&b.focus_today.length){
@@ -177,13 +207,36 @@
         '<div class="focus">'+b.focus_today.map(function(f,i){return '<div class="f"><span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
     }
 
+    if(Array.isArray(b.urgent)&&b.urgent.length){
+      h+=card("🔴 Urgente","",b.urgent.map(function(x){
+        var ttl=linkify(esc(x.title||""),x.link);
+        var who=x.who?'<span class="who">'+esc(x.who)+'</span>':'';
+        return '<div class="row"><div class="ti">'+ttl+who+'</div>'+(x.why?'<div class="why">'+esc(x.why)+'</div>':'')+'</div>';
+      }).join(""));
+    }
+
+    if(Array.isArray(b.decisions)&&b.decisions.length){
+      h+=card("🟡 Decisões","",b.decisions.map(function(x){
+        return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+'</div>'+(x.note?'<div class="why">'+esc(x.note)+'</div>':'')+'</div>';
+      }).join(""));
+    }
+
+    if(Array.isArray(b.email)&&b.email.length){
+      h+=card("📧 Email","",b.email.map(function(x){
+        var dotc=x.level==="red"?"🔴":(x.level==="yellow"?"🟡":"⚪");
+        var inner='<span class="dot">'+dotc+'</span>'+(x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||"");
+        return '<div class="row"><div class="ti">'+linkify(inner,x.link)+'</div>'+(x.action?'<div class="why">'+esc(x.action)+'</div>':'')+'</div>';
+      }).join(""));
+    }
+
     h+='<div class="cols">';
     var ag;
     if(Array.isArray(b.calendar)&&b.calendar.length){
       ag='<div class="days">'+b.calendar.map(function(day){
         var evs=day.events||[];
         var inner=evs.length? evs.map(function(e){
-          return '<div class="ev"><div class="t">'+esc(e.time||"")+'</div><div class="ti">'+esc(e.title||"")+'</div>'+
+          var ti=e.link?('<a class="evlnk" href="'+esc(e.link)+'" target="_blank" rel="noopener">'+esc(e.title||"")+'</a>'):esc(e.title||"");
+          return '<div class="ev"><div class="t">'+esc(e.time||"")+'</div><div class="ti">'+ti+'</div>'+
             ((e.participants&&e.participants.length)?'<div class="p">'+esc(e.participants.join(", "))+'</div>':'')+
             ((e.flags&&e.flags.length)?e.flags.map(function(f){return '<div class="flag">⚠️ '+esc(f)+'</div>';}).join(""):'')+'</div>';
         }).join("") : '<div class="empty">livre</div>';
@@ -193,15 +246,18 @@
     h+=card("📅 Agenda · 3 dias","",ag);
 
     var tk="";
-    (t.p1||[]).forEach(function(x){tk+='<div class="tk"><span class="lab p1">P1</span>'+esc(x.title)+(x.due?'<div class="sub">vence '+esc(x.due)+'</div>':'')+'</div>';});
-    (t.overdue||[]).forEach(function(x){tk+='<div class="tk"><span class="lab over">overdue</span>'+esc(x.title)+(x.since?'<div class="sub">desde '+esc(x.since)+'</div>':'')+'</div>';});
-    (t.cold_followups||[]).forEach(function(x){tk+='<div class="tk"><span class="lab fu">followup '+(x.days!=null?x.days+"d":"")+'</span>'+esc(x.name)+(x.context?'<div class="sub">'+esc(x.context)+'</div>':'')+'</div>';});
+    (t.p1||[]).forEach(function(x){tk+='<div class="tk"><span class="lab p1">P1</span>'+linkify(esc(x.title),x.link)+(x.due?'<div class="sub">vence '+esc(x.due)+'</div>':'')+'</div>';});
+    (t.overdue||[]).forEach(function(x){tk+='<div class="tk"><span class="lab over">overdue</span>'+linkify(esc(x.title),x.link)+(x.since?'<div class="sub">desde '+esc(x.since)+'</div>':'')+'</div>';});
+    (t.cold_followups||[]).forEach(function(x){tk+='<div class="tk"><span class="lab fu">followup '+(x.days!=null?x.days+"d":"")+'</span>'+linkify(esc(x.name),x.link)+(x.context?'<div class="sub">'+esc(x.context)+'</div>':'')+'</div>';});
     if(!tk) tk='<div class="empty">Nada pendente.</div>';
     h+=card("📋 Tasks","",tk);
     h+='</div>';
 
     if(d.new_pages||d.new_decisions!=null||d.meetings!=null){
-      var chips=(d.new_pages||[]).map(function(p){return '<span class="chip">+ '+esc(p)+'</span>';}).join("");
+      var chips=(d.new_pages||[]).map(function(p){
+        var name=(typeof p==="string")?p:(p.title||p.name||""); var lnk=(p&&typeof p==="object")?p.link:null;
+        return lnk?('<a class="chip" style="text-decoration:none" href="'+esc(lnk)+'" target="_blank" rel="noopener">+ '+esc(name)+'</a>'):('<span class="chip">+ '+esc(name)+'</span>');
+      }).join("");
       h+=card("🧠 O cérebro aprendeu",d.since?'<span class="badge">desde '+esc(d.since)+'</span>':'',
         (chips?'<div class="chips">'+chips+'</div>':'')+
         '<div class="dmeta">'+(d.new_decisions!=null?d.new_decisions+" decisões · ":"")+(d.meetings!=null?d.meetings+" reuniões ingeridas":"")+'</div>');
@@ -214,11 +270,12 @@
     if(sig.decisions!=null) sg.push('<span><b>'+sig.decisions+'</b>decisões</span>');
     if(sg.length) h+=card("📊 Métricas","",'<div class="sig">'+sg.join("")+'</div>');
 
-    if(b.summary_md) h+='<div class="card"><details class="raw"><summary>Ver brief completo</summary><pre>'+esc(b.summary_md)+'</pre></details></div>';
-
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
   }
 
+  $("btnBrief").addEventListener("click",function(){ $("modalBody").textContent=lastBrief||"(sem brief)"; $("modal").hidden=false; });
+  $("btnCloseModal").addEventListener("click",function(){ $("modal").hidden=true; });
+  $("modal").addEventListener("click",function(e){ if(e.target===$("modal")) $("modal").hidden=true; });
   $("btnEnter").addEventListener("click",submitToken);
   $("tok").addEventListener("keydown",function(e){ if(e.key==="Enter") submitToken(); });
   $("btnRefresh").addEventListener("click",load);
