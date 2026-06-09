@@ -80,13 +80,30 @@
   a.lnk:hover{text-decoration:underline}
   a.evlnk{color:inherit;text-decoration:none}
   a.evlnk:hover{text-decoration:underline}
-  .lane{margin-bottom:10px}
+  .lane{margin:0 0 14px}
   .lane:last-child{margin-bottom:0}
-  .lane-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;margin:2px 0 4px}
-  .age{font-size:11px;color:var(--muted);margin-left:8px;white-space:nowrap}
-  .nudge{font-size:10.5px;font-weight:800;color:var(--orange);background:var(--orange-bg);padding:1px 6px;border-radius:5px;margin-left:8px}
-  .inbox-sum{font-size:12px;color:var(--muted);margin:-2px 0 10px}
-  .rest{color:var(--muted);font-size:12.5px;font-style:italic;padding-top:8px;border-top:1px solid var(--line);margin-top:6px}
+  .lane-h{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;display:flex;align-items:center;gap:6px}
+  .inbox-sum{font-size:12px;color:var(--muted);margin:-2px 0 12px;display:flex;flex-wrap:wrap;gap:10px}
+  .rest{color:var(--muted);font-size:12.5px;font-style:italic;padding-top:8px;border-top:1px solid var(--line);margin-top:4px}
+  /* email row */
+  .mail{padding:9px 0 9px 10px;border-left:2px solid var(--line);margin-bottom:2px}
+  .mail+.mail{border-top:1px solid var(--line)}
+  .mail-top{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+  .who-tag{font-size:11px;font-weight:700;color:#475569;background:rgba(100,116,139,.13);padding:1px 8px;border-radius:6px;white-space:nowrap}
+  @media (prefers-color-scheme:dark){.who-tag{color:#cbd5e1;background:rgba(148,163,184,.16)}}
+  .topic-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--purple);background:var(--purple-bg);padding:1px 7px;border-radius:6px}
+  .mail .age{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
+  .mail .nudge{font-size:10px;font-weight:800;color:var(--orange);background:var(--orange-bg);padding:1px 7px;border-radius:6px}
+  .mail-act{font-size:14px;color:var(--ink);font-weight:600;line-height:1.35;margin:1px 0}
+  .mail-subj{display:block;font-size:12px;color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .mail-subj:hover{color:var(--accent);text-decoration:underline}
+  .mail-subj.main{color:var(--ink);font-size:13.5px;font-weight:600;white-space:normal}
+  .mail-subj.main:hover{color:var(--accent)}
+  /* collapse */
+  .card-h{cursor:pointer;user-select:none}
+  .caret{display:inline-block;color:var(--muted);font-size:10px;transition:transform .15s;margin-right:2px}
+  .card:not(.collapsed) .caret{transform:rotate(90deg)}
+  .card.collapsed .card-body{display:none}
   /* modal */
   #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:18px}
   #modal[hidden]{display:none!important}
@@ -189,8 +206,12 @@
       });
   }
 
+  var collapsed={};
+  try{ collapsed=JSON.parse(localStorage.getItem("orbital_collapsed")||"{}"); }catch(e){}
+  function slug(s){return String(s).replace(/[^\w]+/g,"-").toLowerCase();}
   function card(title,right,body){
-    return '<div class="card"><h2>'+title+(right?'<span style="margin-left:auto">'+right+'</span>':'')+'</h2>'+body+'</div>';
+    var k=slug(title), cl=collapsed[k]?" collapsed":"";
+    return '<div class="card'+cl+'" data-key="'+k+'"><h2 class="card-h"><span class="caret">▸</span>'+title+(right?'<span style="margin-left:auto">'+right+'</span>':'')+'</h2><div class="card-body">'+body+'</div></div>';
   }
 
   var lastBrief="";
@@ -232,23 +253,23 @@
     if(b.inbox){
       var ib=b.inbox;
       var nr=(ib.respond||[]).length, nw=(ib.waiting||[]).length, nu=(ib.unread||[]).length;
-      var sum='<div class="inbox-sum">🔴 '+nr+' responder · ⏳ '+nw+' cobrar · 📬 '+nu+' não lidas'+(ib.rest_count?' · ⚪ '+ib.rest_count+' resto':'')+'</div>';
+      var sum='<div class="inbox-sum"><span>🔴 '+nr+' responder</span><span>⏳ '+nw+' cobrar</span><span>📬 '+nu+' não lidas</span>'+(ib.rest_count?'<span>⚪ '+ib.rest_count+' resto</span>':'')+'</div>';
+      function tags(who,topic){ return '<span class="who-tag">'+esc(who||"")+'</span>'+(topic?'<span class="topic-tag">'+esc(topic)+'</span>':''); }
+      function subj(x,main){ var t=esc(x.subject||""); return x.link?'<a class="mail-subj'+(main?' main':'')+'" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+t+'</a>':'<span class="mail-subj'+(main?' main':'')+'">'+t+'</span>'; }
       var body=sum;
       if(nr){ body+='<div class="lane"><div class="lane-h" style="color:var(--red)">🔴 Sua vez — responder</div>'+
         ib.respond.map(function(x){
-          var inner=(x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||'');
-          var age=x.age?'<span class="age">'+esc(x.age)+'</span>':'';
-          return '<div class="row"><div class="ti">'+linkify(inner,x.link)+age+'</div>'+(x.action?'<div class="why">→ '+esc(x.action)+'</div>':'')+'</div>';
+          return '<div class="mail"><div class="mail-top">'+tags(x.from,x.topic)+(x.age?'<span class="age">'+esc(x.age)+'</span>':'')+'</div>'+
+            (x.action?'<div class="mail-act">'+esc(x.action)+'</div>':'')+subj(x,!x.action)+'</div>';
         }).join('')+'</div>'; }
       if(nw){ body+='<div class="lane"><div class="lane-h" style="color:var(--orange)">⏳ Aguardando — cobrar</div>'+
         ib.waiting.map(function(x){
-          var inner=(x.to?'p/ <b>'+esc(x.to)+'</b> — ':'')+esc(x.subject||'');
-          var meta=(x.sent_days!=null?'<span class="age">enviado há '+esc(x.sent_days)+'d</span>':'')+(x.nudge?'<span class="nudge">⚠️ cobrar</span>':'');
-          return '<div class="row"><div class="ti">'+linkify(inner,x.link)+meta+'</div></div>';
+          var meta=(x.sent_days!=null?'<span class="age">há '+esc(x.sent_days)+'d</span>':'')+(x.nudge?'<span class="nudge">cobrar</span>':'');
+          return '<div class="mail"><div class="mail-top">'+tags("p/ "+(x.to||""),x.topic)+meta+'</div>'+subj(x,true)+'</div>';
         }).join('')+'</div>'; }
       if(nu){ body+='<div class="lane"><div class="lane-h" style="color:var(--muted)">📬 Não lidas relevantes</div>'+
         ib.unread.map(function(x){
-          return '<div class="row"><div class="ti">'+linkify((x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||''),x.link)+'</div></div>';
+          return '<div class="mail"><div class="mail-top">'+tags(x.from,x.topic)+'</div>'+subj(x,true)+'</div>';
         }).join('')+'</div>'; }
       if(ib.rest_count) body+='<div class="rest">⚪ resto: '+esc(ib.rest_count)+' (FYI / ruído)</div>';
       h+=card("📧 Caixa","",(nr||nw||nu||ib.rest_count)?body:'<div class="empty">Inbox limpa.</div>');
@@ -304,6 +325,15 @@
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
   }
 
+  $("content").addEventListener("click",function(e){
+    var hd=e.target.closest&&e.target.closest(".card-h");
+    if(!hd) return;
+    if(e.target.closest("a")) return; // não colapsa ao clicar em link no header
+    var c=hd.parentNode, k=c.getAttribute("data-key");
+    c.classList.toggle("collapsed");
+    collapsed[k]=c.classList.contains("collapsed");
+    try{ localStorage.setItem("orbital_collapsed",JSON.stringify(collapsed)); }catch(e){}
+  });
   $("btnBrief").addEventListener("click",function(){ $("modalBody").textContent=lastBrief||"(sem brief)"; $("modal").hidden=false; });
   $("btnCloseModal").addEventListener("click",function(){ $("modal").hidden=true; });
   $("modal").addEventListener("click",function(e){ if(e.target===$("modal")) $("modal").hidden=true; });
