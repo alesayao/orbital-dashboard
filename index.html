@@ -56,7 +56,7 @@
   /* agenda v2 — altura ∝ duração */
   .ev2{border-left:3px solid var(--accent);background:rgba(37,99,235,.06);padding:5px 9px;border-radius:0 8px 8px 0;margin-bottom:4px;overflow:hidden;display:flex;flex-direction:column;gap:1px}
   .ev2-t{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
-  .ev2-ti{font-size:13px;font-weight:600;line-height:1.25}
+  .ev2-ti{font-size:13px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ev2 .p{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ev2 .flag{margin-top:2px;font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);padding:1px 6px;border-radius:6px;display:inline-block;align-self:flex-start}
   .free{font-size:10.5px;color:var(--green);background:rgba(21,128,61,.05);border:1px dashed rgba(21,128,61,.35);border-radius:6px;text-align:center;padding:2px 0;margin-bottom:4px}
@@ -244,7 +244,7 @@
       ((e.flags&&e.flags.length)?e.flags.map(function(f){return '<div class="flag">⚠️ '+esc(f)+'</div>';}).join(""):'')+'</div>';
   }
   function renderDay(day){
-    var WSTART=8*60, WEND=19*60, SLOT=30, PX=22;
+    var WSTART=8*60, WEND=19*60, SLOT=30, PX=26;
     var raw=(day.events||[]).map(function(e){ var st=parseHM(e.start||e.time), en=parseHM(e.end); return {e:e,st:st,dur:(st!=null&&en!=null&&en>st)?en-st:60}; });
     var timed=raw.filter(function(x){return x.st!=null;}).sort(function(a,b){return a.st-b.st;});
     var untimed=raw.filter(function(x){return x.st==null;});
@@ -255,7 +255,7 @@
       html+=free(cur, timed[0].st); cur=timed[0].st;
       timed.forEach(function(x){
         if(x.st>cur) html+=free(cur,x.st);
-        var hpx=Math.min(220,Math.max(34,Math.round(x.dur/SLOT)*PX));
+        var hpx=Math.min(220,Math.max(42,Math.round(x.dur/SLOT)*PX));
         html+=evBlock(x.e,hpx, x.e.start||x.e.time||"");
         cur=Math.max(cur, x.st+x.dur);
       });
