@@ -54,7 +54,8 @@
   .ev .p{font-size:11.5px;color:var(--muted)}
   .ev .flag{margin-top:4px;font-size:11.5px;font-weight:700;color:var(--red);background:var(--red-bg);padding:2px 6px;border-radius:6px;display:inline-block}
   /* agenda v2 — altura ∝ duração */
-  .ev2{border-left:3px solid var(--accent);background:rgba(37,99,235,.06);padding:5px 9px;border-radius:0 8px 8px 0;margin-bottom:4px;overflow:hidden;display:flex;flex-direction:column;gap:1px}
+  .ev2{border-left:3px solid var(--accent);background:rgba(37,99,235,.06);padding:5px 9px;border-radius:0 8px 8px 0;margin-bottom:4px;display:flex;flex-direction:column;gap:1px}
+  .ev2 .flag{white-space:normal}
   .ev2-t{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
   .ev2-ti{font-size:13px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ev2 .p{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -239,7 +240,7 @@
   function evBlock(e,hpx,startTxt){
     var ti=e.link?('<a class="evlnk" href="'+esc(e.link)+'" target="_blank" rel="noopener">'+esc(e.title||"")+'</a>'):esc(e.title||"");
     var tline=startTxt+(e.end?'–'+esc(e.end):'');
-    return '<div class="ev2" style="height:'+hpx+'px">'+(tline?'<div class="ev2-t">'+esc(tline)+'</div>':'')+'<div class="ev2-ti">'+ti+'</div>'+
+    return '<div class="ev2" style="min-height:'+hpx+'px">'+(tline?'<div class="ev2-t">'+esc(tline)+'</div>':'')+'<div class="ev2-ti">'+ti+'</div>'+
       ((e.participants&&e.participants.length)?'<div class="p">'+esc(e.participants.join(", "))+'</div>':'')+
       ((e.flags&&e.flags.length)?e.flags.map(function(f){return '<div class="flag">⚠️ '+esc(f)+'</div>';}).join(""):'')+'</div>';
   }
