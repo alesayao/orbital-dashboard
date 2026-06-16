@@ -561,8 +561,13 @@
     var item=q[0];
     fetch(CAP_API,{method:"POST",headers:{"Content-Type":"application/json","X-Orbital-Token":clean(tok)},body:JSON.stringify(item)})
       .then(function(r){
-        if(r.ok){ writeQ(readQ().filter(function(x){return x.id!==item.id;})); updFab(); loadCaptures(); flushCap(); }
-        else updFab();  // 4xx/5xx (ex.: endpoint ainda não existe) — mantém na fila
+        if(!r.ok){ updFab(); return; }  // 4xx/5xx — mantém na fila
+        // 200 só conta se vier JSON com ok:true. HTML 200 (rota inexistente) NÃO limpa a fila —
+        // senão a captura evapora silenciosamente. Mantém na fila e o badge avisa.
+        return r.json().then(function(j){
+          if(j&&j.ok){ writeQ(readQ().filter(function(x){return x.id!==item.id;})); updFab(); loadCaptures(); flushCap(); }
+          else updFab();
+        },function(){ updFab(); });  // corpo não-JSON → mantém na fila
       })
       .catch(function(){ updFab(); });  // offline — mantém na fila
   }
