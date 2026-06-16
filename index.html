@@ -179,6 +179,12 @@
   #toast{position:fixed;left:50%;transform:translateX(-50%) translateY(8px);bottom:92px;z-index:70;background:var(--ink);color:var(--card);padding:11px 20px;border-radius:22px;font-size:13.5px;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.32);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
   #toast[hidden]{display:none}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* capturas pendentes (aguardando triagem) */
+  .cap-row{padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:9px;align-items:flex-start}
+  .cap-row:last-child{border:0}
+  .cap-ic{font-size:13px;opacity:.5;margin-top:2px}
+  .cap-txt{flex:1;min-width:0;font-size:14px;line-height:1.4}
+  .cap-meta{font-size:11px;color:var(--muted);margin-top:2px}
   @media (max-width:720px){
     .focus{grid-template-columns:1fr}
     .cols{grid-template-columns:1fr}
@@ -284,7 +290,7 @@
         if(!r.ok) throw new Error("HTTP "+r.status);
         return r.json();
       })
-      .then(function(j){ if(j) render(j.snapshot||{}); })
+      .then(function(j){ if(j){ render(j.snapshot||{}); loadCaptures(); } })
       .catch(function(e){
         $("content").innerHTML='<div class="err-banner">Falha ao carregar: '+esc(e.message)+'. Toque em ⟳.</div>';
       });
@@ -398,6 +404,17 @@
                  (nD?'<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 '+nD+'</span>':'');
       h+=card("🎯 Foco do dia",badges,
         '<div class="focus">'+b.focus_today.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
+    }
+
+    // ✍️ Capturado — input humano aguardando triagem (some quando a rotina processa)
+    var caps=capsForDisplay();
+    if(caps.length){
+      h+=card("✍️ Capturado",'<span class="badge" style="background:var(--orange-bg);color:var(--orange)">'+caps.length+' aguardando</span>',
+        caps.map(function(c){
+          var when=c.capturedAt?ago(c.capturedAt):"";
+          var st=c.state==="sending"?"enviando…":"aguardando triagem";
+          return '<div class="cap-row"><span class="cap-ic">📝</span><div class="cap-txt">'+esc(c.text)+'<div class="cap-meta">'+(when?esc(when)+" · ":"")+st+'</div></div></div>';
+        }).join(""));
     }
 
     // 📥 Central — uma caixa com abas (Urgente / Decisões / Cobrar / Caixa)
@@ -518,18 +535,33 @@
   // Item cai numa fila local (localStorage) e é POSTado pro backend. Se o endpoint
   // ainda não existe (ou está offline), fica na fila e reenvia sozinho no próximo load.
   var CAP_API="https://inspiragoglobal.com.br/api/orbital/capture";
+  var CAP_LIST_API="https://inspiragoglobal.com.br/api/orbital/captures?status=pending";
   var CAPQ="orbital_capture_queue";
   function readQ(){ try{return JSON.parse(localStorage.getItem(CAPQ)||"[]");}catch(e){return [];} }
   function writeQ(q){ try{localStorage.setItem(CAPQ,JSON.stringify(q));}catch(e){} }
   function capId(){ return "c"+Date.now()+"-"+Math.floor(Math.random()*1e6); }
   function updFab(){ var n=readQ().length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
+  // capturas a exibir = fila local (ainda enviando) + pendentes no backend (aguardando triagem), sem duplicar
+  function capsForDisplay(){
+    var local=readQ(), remote=window.__pendingCaps||[], seen={}, out=[];
+    local.forEach(function(x){ seen[x.id]=1; out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
+    remote.forEach(function(x){ if(seen[x.id])return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
+    return out;
+  }
+  function loadCaptures(){
+    var tok=getTok(); if(!tok) return;
+    fetch(CAP_LIST_API,{headers:{"X-Orbital-Token":clean(tok)}})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ if(j&&j.captures){ window.__pendingCaps=j.captures; if(window.__snap) render(window.__snap); } })
+      .catch(function(){});
+  }
   function flushCap(){
     var q=readQ(), tok=getTok();
     if(!q.length||!tok){ updFab(); return; }
     var item=q[0];
     fetch(CAP_API,{method:"POST",headers:{"Content-Type":"application/json","X-Orbital-Token":clean(tok)},body:JSON.stringify(item)})
       .then(function(r){
-        if(r.ok){ writeQ(readQ().filter(function(x){return x.id!==item.id;})); updFab(); flushCap(); }
+        if(r.ok){ writeQ(readQ().filter(function(x){return x.id!==item.id;})); updFab(); loadCaptures(); flushCap(); }
         else updFab();  // 4xx/5xx (ex.: endpoint ainda não existe) — mantém na fila
       })
       .catch(function(){ updFab(); });  // offline — mantém na fila
@@ -546,7 +578,7 @@
     var ta=$("capText"), txt=(ta.value||"").trim();
     if(!txt){ closeCap(); return; }
     var q=readQ(); q.push({id:capId(),text:txt,capturedAt:new Date().toISOString(),source:"manual"}); writeQ(q);
-    closeCap(); updFab(); toast(getTok()?"✓ Capturado":"✓ Salvo (entra ao logar)"); flushCap();
+    closeCap(); updFab(); if(window.__snap) render(window.__snap); toast(getTok()?"✓ Capturado":"✓ Salvo (entra ao logar)"); flushCap();
   }
   $("fab").addEventListener("click",openCap);
   $("capSave").addEventListener("click",saveCap);
