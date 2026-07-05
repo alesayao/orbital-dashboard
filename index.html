@@ -319,7 +319,7 @@
   try{ doneMap=JSON.parse(localStorage.getItem(doneKey)||"{}"); }catch(e){}
   try{ for(var li=localStorage.length-1;li>=0;li--){ var lk=localStorage.key(li); if(/^orbital_done_/.test(lk)&&lk!==doneKey) localStorage.removeItem(lk); } }catch(e){}
   function dk(s){ return slug(String(s).slice(0,80)); }
-  function chk(k){ return '<span class="chk" data-done="'+k+'"></span>'; }
+  function chk(k,ttl){ return '<span class="chk" data-done="'+k+'"'+(ttl?' data-title="'+esc(ttl)+'"':'')+'></span>'; }
   // dieta de saliência: flag vermelha só se for risco real
   function flagHtml(f){ var hot=/conflito|choca|prazo|zero buffer|overdue|vencid|urgente/i.test(f); return '<div class="flag'+(hot?' hot':'')+'">'+(hot?'⚠️ ':'')+esc(f)+'</div>'; }
   function evBlock(e,hpx,startTxt,xcls){
@@ -403,7 +403,7 @@
       var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
                  (nD?'<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 '+nD+'</span>':'');
       h+=card("🎯 Foco do dia",badges,
-        '<div class="focus">'+b.focus_today.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
+        '<div class="focus">'+b.focus_today.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k,f)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
     }
 
     // ✍️ Capturado — input humano aguardando triagem (some quando a rotina processa)
@@ -475,7 +475,7 @@
     var tk="", tTot=0, tDone=0;
     function tkRow(lab,labCls,title,link,sub){
       var k=dk("t-"+title), dn=doneMap[k]; tTot++; if(dn) tDone++;
-      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k)+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
+      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
     }
     (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"");});
     (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"");});
@@ -507,8 +507,9 @@
     // ✓ check de conclusão (dopamina) — toggle local, re-render preserva tudo
     var cb=e.target.closest&&e.target.closest(".chk");
     if(cb){
-      var dkk=cb.getAttribute("data-done");
-      if(doneMap[dkk]) delete doneMap[dkk]; else doneMap[dkk]=1;
+      var dkk=cb.getAttribute("data-done"), ttl=cb.getAttribute("data-title")||"";
+      if(doneMap[dkk]){ delete doneMap[dkk]; undoDoneCapture(dkk); }
+      else { doneMap[dkk]=1; if(ttl) queueDoneCapture(dkk,ttl); }
       try{ localStorage.setItem(doneKey,JSON.stringify(doneMap)); }catch(err){}
       if(window.__snap) render(window.__snap);
       return;
@@ -540,12 +541,24 @@
   function readQ(){ try{return JSON.parse(localStorage.getItem(CAPQ)||"[]");}catch(e){return [];} }
   function writeQ(q){ try{localStorage.setItem(CAPQ,JSON.stringify(q));}catch(e){} }
   function capId(){ return "c"+Date.now()+"-"+Math.floor(Math.random()*1e6); }
-  function updFab(){ var n=readQ().length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
+  // ✓ write-back: marcar feito vira captura "done: …" — a rotina tria e marca no TASKS.md.
+  // Id determinístico (dia+item): re-marcar não duplica (backend é idempotente por id).
+  // Não aparece no card Capturado nem no badge — o feedback é o próprio risco no item.
+  function queueDoneCapture(k,ttl){
+    var id="done-"+todayStr()+"-"+k, q=readQ();
+    if(!q.some(function(x){return x.id===id;})) q.push({id:id,text:"done: "+ttl,capturedAt:new Date().toISOString(),source:"dashboard-done"});
+    writeQ(q); flushCap();
+  }
+  function undoDoneCapture(k){
+    var id="done-"+todayStr()+"-"+k;
+    writeQ(readQ().filter(function(x){return x.id!==id;}));  // se já foi enviada, deixa — caso raro
+  }
+  function updFab(){ var n=readQ().filter(function(x){return x.source!=="dashboard-done";}).length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
   // capturas a exibir = fila local (ainda enviando) + pendentes no backend (aguardando triagem), sem duplicar
   function capsForDisplay(){
     var local=readQ(), remote=window.__pendingCaps||[], seen={}, out=[];
-    local.forEach(function(x){ seen[x.id]=1; out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
-    remote.forEach(function(x){ if(seen[x.id])return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
+    local.forEach(function(x){ seen[x.id]=1; if(x.source!=="dashboard-done") out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
+    remote.forEach(function(x){ if(seen[x.id]||x.source==="dashboard-done")return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
     return out;
   }
   function loadCaptures(){
