@@ -498,6 +498,8 @@
     if(sig.cold_followups!=null) sg.push('<span><b>'+sig.cold_followups+'</b>followups frios</span>');
     if(sig.wiki_pages!=null) sg.push('<span><b>'+sig.wiki_pages+'</b>páginas wiki</span>');
     if(sig.decisions!=null) sg.push('<span><b>'+sig.decisions+'</b>decisões</span>');
+    // 🛰️ prova de cobertura — confiança auditável: o que a rotina de fato varreu
+    if(b.coverage) sg.push('<span style="opacity:.8">🛰️ '+esc(b.coverage)+'</span>');
     if(sg.length) h+=card("📊 Métricas","",'<div class="sig">'+sg.join("")+'</div>');
 
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
