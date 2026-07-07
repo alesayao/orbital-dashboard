@@ -185,6 +185,28 @@
   .cap-ic{font-size:13px;opacity:.5;margin-top:2px}
   .cap-txt{flex:1;min-width:0;font-size:14px;line-height:1.4}
   .cap-meta{font-size:11px;color:var(--muted);margin-top:2px}
+  /* 🌙 fechamento do dia */
+  .night-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .night-row:last-of-type{border-bottom:0}
+  .night-row .t{flex:1;min-width:0;font-size:13.5px}
+  .push-btn{border:0;background:rgba(120,120,128,.14);color:var(--ink);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:14px;cursor:pointer;white-space:nowrap}
+  .push-btn:active{transform:scale(.95)}
+  .pushed{font-size:11px;font-weight:700;color:var(--green);white-space:nowrap}
+  .night-note{display:flex;gap:8px;margin-top:10px}
+  .night-note input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-size:13.5px;padding:9px 12px;outline:none}
+  .night-note input:focus{border-color:var(--accent)}
+  .night-note button{border:0;border-radius:12px;background:rgba(120,120,128,.16);color:var(--ink);font-size:12.5px;font-weight:700;padding:0 14px;cursor:pointer}
+  .close-day{margin-top:12px;width:100%;border:0;border-radius:12px;background:var(--ink);color:var(--card);font-size:13.5px;font-weight:700;padding:11px;cursor:pointer}
+  .close-day:active{transform:scale(.98)}
+  .closed-line{font-size:13px;color:var(--muted)}
+  /* 🧊 emperrado */
+  .stale{font-size:10px;font-weight:700;color:#0369a1;background:rgba(3,105,161,.08);padding:1px 6px;border-radius:5px;margin-left:7px;white-space:nowrap}
+  @media (prefers-color-scheme:dark){.stale{color:#7dd3fc;background:rgba(125,211,252,.12)}}
+  /* 🤝 radar */
+  .vip-row{padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .vip-row:last-child{border:0}
+  .vip-row .d{font-weight:800;color:var(--orange)}
+  .vip-row .hint{color:var(--muted);font-size:12px;margin-top:1px}
   @media (max-width:720px){
     .focus{grid-template-columns:1fr}
     .cols{grid-template-columns:1fr}
@@ -290,7 +312,7 @@
         if(!r.ok) throw new Error("HTTP "+r.status);
         return r.json();
       })
-      .then(function(j){ if(j){ render(j.snapshot||{}); loadCaptures(); } })
+      .then(function(j){ if(j){ render(j.snapshot||{}); loadCaptures(); loadHistory(); } })
       .catch(function(e){
         $("content").innerHTML='<div class="err-banner">Falha ao carregar: '+esc(e.message)+'. Toque em ⟳.</div>';
       });
@@ -318,6 +340,11 @@
   var doneKey="orbital_done_"+todayStr(), doneMap={};
   try{ doneMap=JSON.parse(localStorage.getItem(doneKey)||"{}"); }catch(e){}
   try{ for(var li=localStorage.length-1;li>=0;li--){ var lk=localStorage.key(li); if(/^orbital_done_/.test(lk)&&lk!==doneKey) localStorage.removeItem(lk); } }catch(e){}
+  // 🌙 estado do fechamento do dia (local, zera por dia como o done)
+  var closedKey="orbital_closed_"+todayStr(), pushedKey="orbital_pushed_"+todayStr(), pushedMap={};
+  try{ pushedMap=JSON.parse(localStorage.getItem(pushedKey)||"{}"); }catch(e){}
+  try{ for(var lj=localStorage.length-1;lj>=0;lj--){ var lk2=localStorage.key(lj); if(/^orbital_(closed|pushed)_/.test(lk2)&&lk2!==closedKey&&lk2!==pushedKey) localStorage.removeItem(lk2); } }catch(e){}
+  function dayClosed(){ try{return localStorage.getItem(closedKey)==="1";}catch(e){return false;} }
   function dk(s){ return slug(String(s).slice(0,80)); }
   function chk(k,ttl){ return '<span class="chk" data-done="'+k+'"'+(ttl?' data-title="'+esc(ttl)+'"':'')+'></span>'; }
   // dieta de saliência: flag vermelha só se for risco real
@@ -398,6 +425,27 @@
          (sub?'<span class="sub">'+sub+'</span>':'')+'</div>';
     })();
 
+    // 🌙 Fechamento do dia — ritual de descarga (a partir das 19h)
+    if(new Date().getHours()>=19){
+      var nDone2=0; try{ nDone2=Object.keys(doneMap).length; }catch(e){}
+      if(dayClosed()){
+        h+=card("🌙 Dia fechado",'<span class="badge" style="background:rgba(21,128,61,.12);color:var(--green)">✓ '+nDone2+'</span>',
+          '<div class="closed-line">Até amanhã. O brief das 6h30 chega com o que você empurrou.</div>');
+      } else {
+        var open=[], nv=($("nightNote")&&$("nightNote").value)||"";
+        (b.focus_today||[]).forEach(function(f){ var k=dk("f-"+f); if(!doneMap[k]) open.push({k:k,t:f}); });
+        ((t&&t.p1)||[]).forEach(function(x){ var k=dk("t-"+(x.title||"")); if(!doneMap[k]) open.push({k:k,t:x.title||""}); });
+        var rows=open.slice(0,6).map(function(o){
+          return '<div class="night-row"><span class="t">'+esc(o.t)+'</span>'+
+            (pushedMap[o.k]?'<span class="pushed">→ amanhã ✓</span>':'<button class="push-btn" type="button" data-push="'+o.k+'" data-ptitle="'+esc(o.t)+'">→ amanhã</button>')+'</div>';
+        }).join("");
+        h+=card("🌙 Fechar o dia",'<span class="badge">✓ '+nDone2+' hoje</span>',
+          (rows||'<div class="empty">Tudo feito. 👏</div>')+
+          '<div class="night-note"><input id="nightNote" placeholder="o que ficou na cabeça?" value="'+esc(nv)+'"><button id="nightNoteBtn" type="button">guardar</button></div>'+
+          '<button class="close-day" id="closeDayBtn" type="button">Fechar o dia ✓</button>');
+      }
+    }
+
     if(Array.isArray(b.focus_today)&&b.focus_today.length){
       var nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
       var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
@@ -473,12 +521,12 @@
     h+=card("📅 Agenda · 3 dias","",ag);
 
     var tk="", tTot=0, tDone=0;
-    function tkRow(lab,labCls,title,link,sub){
+    function tkRow(lab,labCls,title,link,sub,key){
       var k=dk("t-"+title), dn=doneMap[k]; tTot++; if(dn) tDone++;
-      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
+      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+staleBadge(key||k)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
     }
-    (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"");});
-    (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"");});
+    (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"",x.key);});
+    (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"",x.key);});
     (t.cold_followups||[]).forEach(function(x){tk+=tkRow("followup "+(x.days!=null?x.days+"d":""),"fu",x.name,x.link,x.context?esc(x.context):"");});
     if(!tk) tk='<div class="empty">Nada pendente.</div>';
     h+=card("📋 Tasks",tTot?'<span class="badge" style="background:rgba(21,128,61,.12);color:var(--green)">✓ '+tDone+'/'+tTot+'</span>':"",tk);
@@ -491,6 +539,14 @@
       h+=card("🧠 O cérebro aprendeu",d.since?'<span class="badge">desde '+esc(d.since)+'</span>':'',
         (chips?'<div class="chips">'+chips+'</div>':'')+
         '<div class="dmeta">'+(d.new_decisions!=null?d.new_decisions+" decisões · ":"")+(d.meetings!=null?d.meetings+" reuniões ingeridas":"")+'</div>');
+    }
+
+    // 🤝 Radar de relacionamento — VIPs em silêncio (emitido pela rotina em briefing.vip_radar)
+    if(Array.isArray(b.vip_radar)&&b.vip_radar.length){
+      h+=card("🤝 Radar","",b.vip_radar.map(function(x){
+        return '<div class="vip-row">sem contato com <b>'+esc(x.name||"")+'</b> há <span class="d">'+esc(x.days!=null?x.days+"d":"?")+'</span>'+
+          (x.hint?'<div class="hint">'+esc(x.hint)+'</div>':'')+'</div>';
+      }).join(""));
     }
 
     var sg=[];
@@ -516,6 +572,29 @@
       if(window.__snap) render(window.__snap);
       return;
     }
+    // 🌙 empurrar item pra amanhã (vira captura "push: …")
+    var pb=e.target.closest&&e.target.closest(".push-btn");
+    if(pb){
+      var pk=pb.getAttribute("data-push"), pt=pb.getAttribute("data-ptitle")||"";
+      var pid="push-"+todayStr()+"-"+pk, q2=readQ();
+      if(!q2.some(function(x){return x.id===pid;})) q2.push({id:pid,text:"push: "+pt,capturedAt:new Date().toISOString(),source:"night"});
+      writeQ(q2); pushedMap[pk]=1;
+      try{ localStorage.setItem(pushedKey,JSON.stringify(pushedMap)); }catch(err){}
+      flushCap(); if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🌙 guardar pensamento noturno (vira captura "note: …")
+    if(e.target&&e.target.id==="nightNoteBtn"){
+      var ni=$("nightNote"), val=((ni&&ni.value)||"").trim();
+      if(val){ var q3=readQ(); q3.push({id:capId(),text:"note: "+val,capturedAt:new Date().toISOString(),source:"night"}); writeQ(q3); if(ni) ni.value=""; flushCap(); toast("✓ Guardado pra amanhã"); if(window.__snap) render(window.__snap); }
+      return;
+    }
+    // 🌙 fechar o dia
+    if(e.target&&e.target.id==="closeDayBtn"){
+      try{ localStorage.setItem(closedKey,"1"); }catch(err){}
+      if(window.__snap) render(window.__snap);
+      return;
+    }
     // troca de aba
     var tb=e.target.closest&&e.target.closest(".tab-btn");
     if(tb){
@@ -534,6 +613,10 @@
     collapsed[k]=c.classList.contains("collapsed");
     try{ localStorage.setItem("orbital_collapsed",JSON.stringify(collapsed)); }catch(e){}
   });
+  $("content").addEventListener("keydown",function(e){
+    if(e.target&&e.target.id==="nightNote"&&e.key==="Enter"){ e.preventDefault(); var btn=$("nightNoteBtn"); if(btn) btn.click(); }
+  });
+
   // ───── Captura manual: porta de entrada do humano ─────
   // Item cai numa fila local (localStorage) e é POSTado pro backend. Se o endpoint
   // ainda não existe (ou está offline), fica na fila e reenvia sozinho no próximo load.
@@ -562,6 +645,34 @@
     local.forEach(function(x){ seen[x.id]=1; if(x.source!=="dashboard-done") out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
     remote.forEach(function(x){ if(seen[x.id]||x.source==="dashboard-done")return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
     return out;
+  }
+  // 🧊 radar de emperrado — compara briefs anteriores via /history; identidade = task.key
+  // (a rotina mantém o key estável entre dias; título reescrito não quebra o match)
+  var HIST_API="https://inspiragoglobal.com.br/api/orbital/history?type=tasks&limit=6";
+  function loadHistory(){
+    var tok=getTok(); if(!tok||window.__histDays) return;
+    fetch(HIST_API,{headers:{"X-Orbital-Token":clean(tok)}})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){
+        if(!j) return;
+        var arr=j.history||j.items||j.events||(Array.isArray(j)?j:null); if(!arr) return;
+        var byDay={};
+        arr.forEach(function(e){
+          var d0=(e&&e.createdAt)?String(e.createdAt).slice(0,10):null, data=e&&e.data; if(!d0||!data) return;
+          if(!byDay[d0]) byDay[d0]={};
+          [].concat(data.p1||[],data.overdue||[]).forEach(function(x){ if(!x) return;
+            var kk=x.key||(x.title?dk("t-"+x.title):null); if(kk) byDay[d0][kk]=1; });
+        });
+        var days=Object.keys(byDay).sort().reverse().filter(function(d0){return d0!==todayStr();});
+        window.__histDays=days.map(function(d0){return byDay[d0];});
+        if(window.__snap) render(window.__snap);
+      })
+      .catch(function(){});
+  }
+  function staleBadge(kk){
+    var hd=window.__histDays; if(!hd||!hd.length||!kk) return "";
+    var n=0; for(var i=0;i<hd.length;i++){ if(hd[i][kk]) n++; else break; }
+    return n>=2?'<span class="stale">🧊 '+(n+1)+'º brief</span>':"";
   }
   function loadCaptures(){
     var tok=getTok(); if(!tok) return;
