@@ -213,6 +213,19 @@
     .days{grid-template-columns:1fr}
     header.top h1{font-size:19px}
   }
+
+/* 🤖 Frota de agentes */
+.ag-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line,rgba(120,120,120,.15));flex-wrap:wrap}
+.ag-row:last-of-type{border-bottom:none}
+.ag-name{font-weight:700;white-space:nowrap}
+.ag-cad{font-size:.72rem;opacity:.65;white-space:nowrap}
+.ag-last{margin-left:auto;font-size:.72rem;opacity:.8;white-space:nowrap}
+.ag-role{flex-basis:100%;font-size:.78rem;opacity:.75;margin-top:1px}
+.fh-row{display:flex;gap:8px;padding:5px 0;cursor:pointer;font-size:.8rem;border-bottom:1px dashed var(--line,rgba(120,120,120,.12))}
+.fh-row:hover{opacity:.75}
+.fh-row .d{font-weight:600}
+.fh-row .a{margin-left:auto;opacity:.6}
+.fh-h{font-size:.72rem;opacity:.6;margin:8px 0 2px;text-transform:uppercase;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -312,10 +325,30 @@
         if(!r.ok) throw new Error("HTTP "+r.status);
         return r.json();
       })
-      .then(function(j){ if(j){ render(j.snapshot||{}); loadCaptures(); loadHistory(); } })
+      .then(function(j){ if(j){ render(j.snapshot||{}); loadCaptures(); loadHistory(); loadFleetHist(); } })
       .catch(function(e){
         $("content").innerHTML='<div class="err-banner">Falha ao carregar: '+esc(e.message)+'. Toque em ⟳.</div>';
       });
+  }
+
+
+  // 🤖 histórico de briefings para a Frota (endpoint /history, type=briefing)
+  var FLEET_HIST_API="https://inspiragoglobal.com.br/api/orbital/history?type=briefing&limit=7";
+  window.__fleetHist=[];
+  function loadFleetHist(){
+    var el=document.getElementById("fleetHist"); if(!el) return;
+    fetch(FLEET_HIST_API,{headers:{"X-Orbital-Token":clean(getTok())}})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){
+        var el2=document.getElementById("fleetHist"); if(!el2) return;
+        if(!j||!j.history||!j.history.length){ el2.innerHTML='<div class="empty" style="font-size:.75rem">sem histórico ainda</div>'; return; }
+        window.__fleetHist=j.history;
+        el2.innerHTML=j.history.map(function(row,i){
+          var d=(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10);
+          return '<div class="fh-row" data-fh="'+i+'"><span class="d">'+esc(d)+'</span><span class="a">'+ago(row.createdAt)+'</span></div>';
+        }).join("");
+      })
+      .catch(function(){ var el3=document.getElementById("fleetHist"); if(el3) el3.innerHTML='<div class="empty" style="font-size:.75rem">histórico indisponível</div>'; });
   }
 
   var collapsed={};
@@ -383,7 +416,7 @@
   }
 
   function render(s){
-    window.__snap=s;
+    window.__snap=s; var s0=s;
     var b=(s.briefing&&s.briefing.data)||{}, t=(s.tasks&&s.tasks.data)||{},
         d=(s.digest&&s.digest.data)||{}, sig=(s.signals&&s.signals.data)||{};
     $("dateLabel").textContent="☀️ "+(b.date_label||"Hoje");
@@ -558,10 +591,48 @@
     if(b.coverage) sg.push('<span style="opacity:.8">🛰️ '+esc(b.coverage)+'</span>');
     if(sg.length) h+=card("📊 Métricas","",'<div class="sig">'+sg.join("")+'</div>');
 
+    // 🤖 Frota de agentes — quem trabalha pra você, última rodada, histórico
+    (function(){
+      var GHSB="https://github.com/alesayao/second-brain";
+      var fl=b.fleet||{};
+      function lastTxt(iso){ return iso?ago(iso):"—"; }
+      function agRow(emoji,name,cad,role,last,histUrl){
+        return '<div class="ag-row"><span class="ag-name">'+emoji+' '+name+'</span><span class="ag-cad">'+cad+'</span>'+
+          '<span class="ag-last">'+last+(histUrl?' · <a class="lnk" href="'+histUrl+'" target="_blank" rel="noopener">histórico ↗</a>':'')+'</span>'+
+          '<span class="ag-role">'+role+'</span></div>';
+      }
+      var fb='';
+      fb+=agRow("🌅","Chief of Staff","cloud · 6h30 diário",
+        "Autor do brief: prioriza teus 3 blockers, fecha com Foco do Dia (≤3) e vigia a frota — denúncia em 1 linha se alguém não rodou.",
+        (s0.briefing&&s0.briefing.createdAt)?ago(s0.briefing.createdAt):"—",
+        GHSB+"/tree/main/outputs/briefings");
+      fb+=agRow("🧹","Executor","local · 18h15 úteis",
+        "Cata o burocrático travado (cobranças, contratos, follow-ups) e deixa rascunhos prontos — nunca envia nada sozinho.",
+        lastTxt(fl.executor), GHSB+"/blob/main/outputs/heartbeats.log");
+      fb+=agRow("🛡️","Guardião","sob demanda",
+        "Revisa output executivo contra as 3 lacunas: auto-desconto, escopo demais, pedido ausente.",
+        "sob demanda", null);
+      fb+=agRow("♟️","Conselheiro","local · sexta 19h",
+        "Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais + 1 pergunta.",
+        lastTxt(fl.conselheiro), GHSB+"/tree/main/outputs/semanais");
+      if(!b.fleet) fb+='<div class="sub" style="opacity:.55;font-size:.72rem;margin-top:6px">Última rodada de Executor/Conselheiro aparece quando a rotina emitir <code>fleet</code> — até lá, heartbeats.log ↗</div>';
+      fb+='<div class="fh-h">📄 últimos briefings (toque para reler)</div><div id="fleetHist"><div class="empty" style="font-size:.75rem">carregando…</div></div>';
+      h+=card("🤖 Frota","",fb);
+    })();
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
   }
 
   $("content").addEventListener("click",function(e){
+    // 🤖 reler briefing antigo (Frota)
+    var fh=e.target.closest&&e.target.closest(".fh-row");
+    if(fh){
+      var fi=+fh.getAttribute("data-fh"), row=(window.__fleetHist||[])[fi];
+      if(row&&row.data){
+        $("modalBody").textContent=row.data.summary_md||JSON.stringify(row.data,null,2);
+        $("modal").hidden=false;
+      }
+      return;
+    }
     // ✓ check de conclusão (dopamina) — toggle local, re-render preserva tudo
     var cb=e.target.closest&&e.target.closest(".chk");
     if(cb){
