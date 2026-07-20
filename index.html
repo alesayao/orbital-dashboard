@@ -45,7 +45,8 @@
   .refresh:hover{background:rgba(120,120,128,.26)}
   .refresh:active{transform:scale(.95)}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 17px;margin-bottom:12px}
-  .card h2{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+  /* §9: headers secundários com -20% de peso — AGORA e Única Coisa dominam */
+  .card h2{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);opacity:.82;display:flex;align-items:center;gap:8px}
   .badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--line);color:var(--ink)}
   .focus{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .focus .f{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 13px;font-size:14px;font-weight:500;line-height:1.4;display:flex;gap:9px}
@@ -214,6 +215,68 @@
     header.top h1{font-size:19px}
   }
 
+/* ═══ 2.0 · modo manhã / Card Única Coisa ═══ */
+.editorial{font-size:16px;line-height:1.45;font-weight:600;margin:2px 0 16px;max-width:62ch}
+.editorial::before{content:"“";opacity:.35;margin-right:1px}
+.editorial::after{content:"”";opacity:.35}
+.one{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 20px 16px;margin-bottom:14px}
+.one.done-item{opacity:.55}
+.one-chal{font-size:12.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.one-ti{font-size:21px;font-weight:700;line-height:1.28;letter-spacing:-.01em}
+.one.done-item .one-ti{text-decoration:line-through}
+.one-why{font-size:14px;color:var(--muted);line-height:1.45;margin-top:7px;max-width:56ch}
+.agebar{height:4px;border-radius:3px;background:var(--line);margin:13px 0 5px;overflow:hidden}
+.agebar i{display:block;height:100%;border-radius:3px}
+.a-fresh i{background:var(--green)}
+.a-warm i{background:var(--yellow)}
+.a-hot i{background:var(--red);animation:agepulse 2.4s ease-in-out infinite}
+@keyframes agepulse{0%,100%{opacity:1}50%{opacity:.45}}
+.age-txt{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.age-txt.hot{color:var(--red)}
+.one-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.act{border:0;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .1s}
+.act:active{transform:scale(.97)}
+.act-do{background:var(--ink);color:var(--card)}
+.act-copy{background:var(--accent);color:#fff}
+.act-ghost{background:rgba(120,120,128,.16);color:var(--ink)}
+.act-warn{background:var(--yellow-bg);color:var(--yellow)}
+.act-kill{background:var(--red-bg);color:var(--red)}
+.fear{margin-top:12px}
+.fear>summary{cursor:pointer;color:var(--muted);font-size:12.5px;list-style:none}
+.fear>summary::-webkit-details-marker{display:none}
+.fear>summary::before{content:"▸ ";font-size:9px;vertical-align:1px}
+.fear[open]>summary::before{content:"▾ "}
+.fear-q{margin-top:9px}
+.fear-q label{display:block;font-size:12.5px;font-weight:600;margin:8px 0 3px}
+.fear-q textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:13.5px/1.4 inherit;padding:8px 10px;resize:vertical;outline:none}
+.fear-q textarea:focus{border-color:var(--accent)}
+.fear-note{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
+/* celebração sóbria ≤600ms */
+@keyframes shipped{0%{transform:scale(1)}35%{transform:scale(1.012)}100%{transform:scale(1)}}
+.shipped{animation:shipped .5s ease-out}
+/* placar de fechamentos + streak */
+.streak{font-size:12.5px;color:var(--muted);padding:4px 2px 0}
+.streak b{color:var(--ink);font-weight:800}
+.closes{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.closes .n{font-size:26px;font-weight:800;line-height:1}
+.closes .lb{font-size:12.5px;color:var(--muted)}
+.boss{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--purple-bg);color:var(--purple);margin:6px 6px 0 0}
+/* 🧠 faísca */
+.spark{font-size:13px;color:var(--muted);padding:10px 2px 0;line-height:1.4}
+.spark b{color:var(--ink);font-weight:600}
+/* ver o resto do dia */
+.more{display:inline-block;margin:6px 2px 0;color:var(--accent);font-size:13.5px;font-weight:600;cursor:pointer;background:0;border:0;padding:6px 0}
+/* 🔒 bloco sagrado */
+.sacred{border-left:3px solid var(--purple);background:var(--purple-bg);color:var(--purple);font-size:11.5px;font-weight:700;padding:6px 9px;border-radius:0 8px 8px 0;margin-bottom:4px}
+/* envelhecimento nas tasks da visão completa */
+.agedot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px;flex-shrink:0}
+.agedot.a-fresh{background:var(--green)}
+.agedot.a-warm{background:var(--yellow)}
+.agedot.a-hot{background:var(--red)}
+.push-btn.warn{background:var(--yellow-bg);color:var(--yellow)}
+.push-btn.ask{background:var(--red-bg);color:var(--red)}
+.cov{font-size:11.5px;color:var(--muted);text-align:center;padding:14px 0 0;opacity:.75}
+
 /* 🤖 Frota de agentes */
 .ag-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line,rgba(120,120,120,.15));flex-wrap:wrap}
 .ag-row:last-of-type{border-bottom:none}
@@ -378,6 +441,66 @@
   try{ pushedMap=JSON.parse(localStorage.getItem(pushedKey)||"{}"); }catch(e){}
   try{ for(var lj=localStorage.length-1;lj>=0;lj--){ var lk2=localStorage.key(lj); if(/^orbital_(closed|pushed)_/.test(lk2)&&lk2!==closedKey&&lk2!==pushedKey) localStorage.removeItem(lk2); } }catch(e){}
   function dayClosed(){ try{return localStorage.getItem(closedKey)==="1";}catch(e){return false;} }
+  // ☠️ mortos do dia (kill declarado no 3º push) — some da lista até a rotina arquivar
+  var killedKey="orbital_killed_"+todayStr(), killedMap={};
+  try{ killedMap=JSON.parse(localStorage.getItem(killedKey)||"{}"); }catch(e){}
+  try{ for(var lm=localStorage.length-1;lm>=0;lm--){ var lk3=localStorage.key(lm); if(/^orbital_killed_/.test(lk3)&&lk3!==killedKey) localStorage.removeItem(lk3); } }catch(e){}
+  // §3 custo progressivo — contador de pushes POR ITEM, persistente (NÃO zera por dia).
+  // É o que força a honestidade: 3º adiamento vira "matar ou manter?".
+  var PUSHC="orbital_pushcount", pushCount={};
+  try{ pushCount=JSON.parse(localStorage.getItem(PUSHC)||"{}"); }catch(e){}
+  function savePushCount(){ try{ localStorage.setItem(PUSHC,JSON.stringify(pushCount)); }catch(e){} }
+  // 🔥 streak de remessas — dias com pelo menos 1 fechamento
+  function shipDays(){ try{ return JSON.parse(localStorage.getItem("orbital_shipdays")||"[]"); }catch(e){ return []; } }
+  function markShip(){
+    var a=shipDays(); if(a.indexOf(todayStr())<0){ a.push(todayStr()); a=a.slice(-90);
+      try{ localStorage.setItem("orbital_shipdays",JSON.stringify(a)); }catch(e){} }
+  }
+  function streakN(){
+    var set={}; shipDays().forEach(function(d0){ set[d0]=1; });
+    var d=new Date(), n=0;
+    if(!set[todayStr()]) d.setDate(d.getDate()-1);  // hoje ainda em aberto não quebra a corrente
+    for(var i=0;i<400;i++){
+      var k=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+      if(!set[k]) break;
+      n++; d.setDate(d.getDate()-1);
+    }
+    return n;
+  }
+  function streakLine(){
+    var n=streakN();
+    if(n>=2) return '<span class="streak">🔥 <b>'+n+' dias seguidos</b> entregando — não quebre a corrente.</span>';
+    if(n===1) return '<span class="streak">🔥 <b>1 dia</b>. A corrente começou.</span>';
+    return '<span class="streak">Corrente nova começa hoje.</span>';
+  }
+  // §8 instrumentação local — o sistema aprende do uso (POST semanal fica pra Onda 3)
+  var MKEY="orbital_metrics_"+todayStr(), MET={};
+  try{ MET=JSON.parse(localStorage.getItem(MKEY)||"{}"); }catch(e){}
+  if(!MET.opened_at) MET.opened_at=new Date().toISOString();
+  MET.opens=(MET.opens||0)+1; MET.actions=MET.actions||0; MET.pushes=MET.pushes||0;
+  MET.kills=MET.kills||0; MET.expands=MET.expands||0; MET.closes=MET.closes||0;
+  function mSave(){ try{ localStorage.setItem(MKEY,JSON.stringify(MET)); }catch(e){} }
+  function mAct(kind){
+    MET.actions++;
+    if(!MET.first_action_at){ MET.first_action_at=new Date().toISOString();
+      MET.activation_s=Math.max(0,Math.round((Date.now()-new Date(MET.opened_at).getTime())/1000)); }
+    if(kind==="push") MET.pushes++;
+    else if(kind==="kill") MET.kills++;
+    else if(kind==="expand") MET.expands++;
+    else if(kind==="close") MET.closes++;
+    mSave();
+  }
+  // guarda ~21 dias de métrica (a Onda 3 POSTa o resumo semanal antes de expirar)
+  try{
+    var keep={}, dd=new Date();
+    for(var mi=0;mi<21;mi++){ keep["orbital_metrics_"+dd.getFullYear()+"-"+pad2(dd.getMonth()+1)+"-"+pad2(dd.getDate())]=1; dd.setDate(dd.getDate()-1); }
+    for(var mj=localStorage.length-1;mj>=0;mj--){ var mk=localStorage.key(mj); if(/^orbital_metrics_/.test(mk)&&!keep[mk]) localStorage.removeItem(mk); }
+  }catch(e){}
+  mSave();
+  // 🌅 modo manhã: antes das 9h a página é só o motor de arranque (§1)
+  function fullForced(){ try{ return sessionStorage.getItem("orbital_full")==="1"; }catch(e){ return !!window.__full; } }
+  function setFull(){ try{ sessionStorage.setItem("orbital_full","1"); }catch(e){ window.__full=1; } }
+  function isMorning(){ return new Date().getHours()<9 && !fullForced(); }
   function dk(s){ return slug(String(s).slice(0,80)); }
   function chk(k,ttl){ return '<span class="chk" data-done="'+k+'"'+(ttl?' data-title="'+esc(ttl)+'"':'')+'></span>'; }
   // dieta de saliência: flag vermelha só se for risco real
@@ -395,7 +518,13 @@
     var timed=raw.filter(function(x){return x.st!=null;}).sort(function(a,b){return a.st-b.st;});
     var untimed=raw.filter(function(x){return x.st==null;});
     if(!raw.length) return '<div class="day"><h3>'+esc(day.label||day.date||"")+'</h3><div class="freeday">livre o dia todo</div></div>';
-    function free(a,z){ if(z-a<SLOT) return ""; var n=Math.round((z-a)/SLOT); return '<div class="free">🟢 '+n+(n>1?" slots":" slot")+' livre'+(n>1?"s":"")+' · '+fmtDur(z-a)+'</div>'; }
+    // §9: censo de slots cortado. Do vazio, só o bloco sagrado 8h–9h sobrevive (§6) —
+    // e ele aparece nomeado como trabalho, nunca como "slot livre".
+    function free(a,z){
+      var SS=8*60, SE=9*60;
+      var ov=Math.min(z,SE)-Math.max(a,SS);
+      return ov>=30?'<div class="sacred">🔒 deep work · 8h–9h</div>':"";
+    }
     var isToday=(day.date===todayStr()), nm=nowMin(), nowDrawn=!isToday;
     var html="", cur=Math.min(WSTART, timed.length?timed[0].st:WSTART);
     if(timed.length){
@@ -415,6 +544,116 @@
     return '<div class="day"><h3>'+esc(day.label||day.date||"")+'</h3>'+html+'</div>';
   }
 
+  // ═══ 2.0 · Card Única Coisa (§2) ═══
+  // Seleção: briefing.one_thing (escolhido pela pergunta do dominó na rotina).
+  // Fallback sem rotina 2.0: focus_today[0] → primeiro P1.
+  function pickOne(b,t){
+    var o=b.one_thing;
+    if(typeof o==="string"&&o.trim()) o={title:o};
+    if(o&&o.title) return o;
+    if(b.focus_today&&b.focus_today[0]) return {title:b.focus_today[0],_fb:1};
+    var p=(t&&t.p1&&t.p1[0])||(t&&t.overdue&&t.overdue[0]);
+    if(p&&p.title) return {title:p.title,key:p.key,link:p.link,_fb:1};
+    return null;
+  }
+  // done key alinhado com a visão completa: o mesmo item marcado aqui aparece marcado lá
+  function oneKey(b,o){
+    if(!o) return null;
+    var ti=o.title||"";
+    return ((b.focus_today||[]).indexOf(ti)>=0) ? dk("f-"+ti) : dk("t-"+ti);
+  }
+  function ageCls(d){ return d==null?"":(d<3?"a-fresh":(d<10?"a-warm":"a-hot")); }
+  function ageWidth(d){ return d==null?0:Math.max(8,Math.min(100,Math.round(d/21*100))); }
+  // dias parados: campo da rotina, ou inferido pelo histórico (nº de briefs seguidos)
+  function stalledOf(x,kk){
+    if(x&&x.stalled_days!=null) return +x.stalled_days;
+    if(x&&x.days!=null) return +x.days;
+    var hd=window.__histDays;
+    if(hd&&hd.length&&kk){ var n=0; for(var i=0;i<hd.length;i++){ if(hd[i][kk]) n++; else break; } if(n>=2) return n+1; }
+    return null;
+  }
+  function pushBtn(k,ti){
+    if(killedMap[k]) return '<span class="pushed" style="color:var(--red)">☠️ morto</span>';
+    if(pushedMap[k]) return '<span class="pushed">→ amanhã ✓</span>';
+    var n=pushCount[k]||0;
+    if(n>=2) return '<span data-askwrap="'+k+'"><button class="push-btn ask" type="button" data-askkill="'+k+'" data-ptitle="'+esc(ti)+'">matar ou manter?</button></span>';
+    return '<button class="push-btn'+(n===1?" warn":"")+'" type="button" data-push="'+k+'" data-ptitle="'+esc(ti)+'">→ amanhã'+(n?" (2º)":"")+'</button>';
+  }
+  function oneCard(b,o,k){
+    if(!o) return "";
+    var dn=doneMap[k], sd=stalledOf(o,o.key?dk("t-"+(o.title||"")):k);
+    var mins=o.minutes||5;
+    var h='<div class="one'+(dn?" done-item":"")+'" data-one="1">';
+    h+='<div class="one-chal">Dá pra matar em '+esc(mins)+' min?</div>';
+    h+='<div class="one-ti">'+linkify(esc(o.title||""),o.link)+'</div>';
+    if(o.why) h+='<div class="one-why">'+esc(o.why)+'</div>';
+    if(sd!=null){
+      var cls=ageCls(sd);
+      h+='<div class="agebar '+cls+'"><i style="width:'+ageWidth(sd)+'%"></i></div>'+
+         '<div class="age-txt'+(cls==="a-hot"?" hot":"")+'">parado há '+sd+' dia'+(sd===1?"":"s")+'</div>';
+    }
+    h+='<div class="one-acts">';
+    var draft=(b.drafts||{})[o.key||""]||(b.drafts||{})[slug(o.title||"")];
+    if(draft) h+='<button class="act act-copy" type="button" data-copy="'+esc(o.key||slug(o.title||""))+'">📋 copiar rascunho</button>';
+    h+='<button class="act act-do'+(dn?" act-ghost":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(o.title||"")+'"'+(o.close?' data-close="1"':'')+'>'+(dn?"desfazer":"feito ✓")+'</button>';
+    if(!dn){
+      // mesmo botão do ritual noturno, com peso de ação no card principal
+      h+=pushBtn(k,o.title||"")
+           .replace('class="push-btn ask"','class="act act-kill push-btn ask"')
+           .replace('class="push-btn"','class="act act-ghost push-btn"')
+           .replace('class="push-btn warn"','class="act act-warn push-btn warn"');
+    }
+    h+='</div>';
+    if(o.confronto){
+      h+='<details class="fear"><summary>dimensionar o medo</summary><div class="fear-q">'+
+         '<label>Qual é o pior caso realista?</label><textarea rows="2"></textarea>'+
+         '<label>É reversível?</label><textarea rows="2"></textarea>'+
+         '<label>Qual o custo de NÃO fazer, daqui a 6 meses?</label><textarea rows="2"></textarea>'+
+         '<div class="fear-note">Nada disso é salvo. O valor está em responder.</div></div></details>';
+    }
+    return h+'</div>';
+  }
+  // lotes (§2) — um card, um check: "10 min, 5 mensagens, zero produção"
+  function batchCards(b){
+    return (b.batches||[]).map(function(bt){
+      var k=dk("b-"+(bt.title||"")), dn=doneMap[k];
+      var items=(bt.items||[]).join(" · ");
+      return '<div class="one'+(dn?" done-item":"")+'" style="padding:16px 18px 14px">'+
+        '<div class="one-chal">Lote · '+esc(bt.minutes||10)+' min, zero produção</div>'+
+        '<div class="one-ti" style="font-size:17px">'+esc(bt.title||"")+'</div>'+
+        (items?'<div class="one-why">'+esc(items)+'</div>':'')+
+        '<div class="one-acts"><button class="act act-do'+(dn?" act-ghost":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(bt.title||"")+'" data-close="1">'+(dn?"desfazer":"lote fechado ✓")+'</button></div></div>';
+    }).join("");
+  }
+  function closesCard(b){
+    var cw=b.closes_week;
+    if(!cw) return "";
+    var body='<div class="closes"><span class="n">'+esc(cw.count!=null?cw.count:0)+'</span><span class="lb">fechamentos esta semana</span></div>';
+    if((cw.bosses||[]).length) body+='<div>'+cw.bosses.map(function(x){ return '<span class="boss">'+esc(x)+'</span>'; }).join("")+'</div>';
+    return card("🏁 Fechados","",body);
+  }
+  function sparkHtml(b){
+    if(!b.spark||!b.spark.title) return "";
+    return '<div class="spark">🧠 <b>'+(b.spark.link?linkify(esc(b.spark.title),b.spark.link):esc(b.spark.title))+'</b></div>';
+  }
+
+  // 🌅 modo manhã (§1) — só o que faz a primeira ação acontecer em <60s
+  function renderMorning(b,t,stale){
+    var o=pickOne(b,t), k=oneKey(b,o), h="";
+    if(stale) h+='<div class="err-banner" style="background:var(--yellow-bg);color:var(--yellow)">⚠️ Dados de '+esc(b.date_label||"ontem")+' — a rotina ainda não rodou hoje.</div>';
+    var ed=b.editorial||b.state_line||"";
+    if(ed) h+='<div class="editorial">'+esc(ed)+'</div>';
+    h+=oneCard(b,o,k)||'<div class="empty">Sem uma coisa definida hoje. A rotina escolhe pela pergunta do dominó.</div>';
+    h+=batchCards(b);
+    h+=closesCard(b);
+    h+=streakLine();
+    h+=sparkHtml(b);
+    h+='<div><button class="more" id="btnFull" type="button">ver o resto do dia →</button></div>';
+    if(b.coverage) h+='<div class="cov">🛰️ '+esc(b.coverage)+'</div>';
+    $("stateLine").textContent="";
+    $("content").innerHTML=h;
+  }
+
   function render(s){
     window.__snap=s; var s0=s;
     var b=(s.briefing&&s.briefing.data)||{}, t=(s.tasks&&s.tasks.data)||{},
@@ -430,11 +669,19 @@
     var isStale=false;
     if(s.briefing&&s.briefing.createdAt){
       isStale=(new Date(s.briefing.createdAt).toDateString()!==new Date().toDateString());
-      if(isStale) h+='<div class="err-banner" style="background:var(--yellow-bg);color:var(--yellow)">⚠️ Dados de '+esc(b.date_label||"ontem")+' — a rotina ainda não rodou hoje.</div>';
     }
 
+    // 🌅 antes das 9h a página é só o motor de arranque (§1) — Caixa e Métricas nem existem
+    if(isMorning()){ renderMorning(b,t,isStale); return; }
+
+    if(isStale) h+='<div class="err-banner" style="background:var(--yellow-bg);color:var(--yellow)">⚠️ Dados de '+esc(b.date_label||"ontem")+' — a rotina ainda não rodou hoje.</div>';
+
+    // 🎯 a Única Coisa também abre a visão completa — e some dos outros cards (§9 dedupe)
+    var oneT=pickOne(b,t), oneK=oneKey(b,oneT), oneTitle=(oneT&&oneT.title)||null;
+
     // ⏰ AGORA — âncora de ação única (o que fazer neste exato momento)
-    (function(){
+    // §6: depois das 19h o strip cede lugar ao ritual noturno (nada de countdown pro dia seguinte)
+    if(new Date().getHours()<19) (function(){
       var dayObj=null, ts=todayStr();
       (b.calendar||[]).forEach(function(d0){ if(d0.date===ts&&!dayObj) dayObj=d0; });
       if(!dayObj&&!isStale&&(b.calendar||[]).length) dayObj=b.calendar[0];
@@ -448,15 +695,19 @@
       if(cur){ main=esc(cur.e.title||"reunião"); cd="agora"+(cur.e.end?" · até "+esc(cur.e.end):"");
         if(nxt) sub="depois: "+esc(nxt.e.title||"")+" às "+esc(nxt.e.start||nxt.e.time||""); }
       else if(nxt){ var dmin=nxt.st-nm; main=esc(nxt.e.title||""); cd="em "+fmtDur(dmin);
-        var slots=Math.floor(dmin/30);
-        if(b.focus_today&&b.focus_today[0]) sub="até lá ("+(slots>0?slots+" slot"+(slots>1?"s":""):"<30min")+"): "+esc(b.focus_today[0]); }
-      else { main=(b.focus_today&&b.focus_today[0])?esc(b.focus_today[0]):"agenda livre"; cd="resto do dia livre"; }
+        // §6 slot útil, não censo de slots: um recorte acionável, com o item nomeado
+        if(oneTitle) sub="dá pra matar antes ("+fmtDur(dmin)+"): "+esc(oneTitle); }
+      else { main=oneTitle?esc(oneTitle):"agenda livre"; cd="resto do dia livre"; }
       var nDone=0; try{ nDone=Object.keys(doneMap).length; }catch(e){}
       h+='<div class="now-strip"><span class="k">⏰ agora</span><span class="main">'+main+'</span>'+
          (cd?'<span class="cd">'+esc(cd)+'</span>':'')+
          (nDone?'<span class="cd done-cd">✓ '+nDone+' hoje</span>':'')+
          (sub?'<span class="sub">'+sub+'</span>':'')+'</div>';
     })();
+
+    // 🎯 A Única Coisa — mesmo card do modo manhã, no topo da visão completa
+    h+=oneCard(b,oneT,oneK);
+    h+=batchCards(b);
 
     // 🌙 Fechamento do dia — ritual de descarga (a partir das 19h)
     if(new Date().getHours()>=19){
@@ -466,11 +717,10 @@
           '<div class="closed-line">Até amanhã. O brief das 6h30 chega com o que você empurrou.</div>');
       } else {
         var open=[], nv=($("nightNote")&&$("nightNote").value)||"";
-        (b.focus_today||[]).forEach(function(f){ var k=dk("f-"+f); if(!doneMap[k]) open.push({k:k,t:f}); });
-        ((t&&t.p1)||[]).forEach(function(x){ var k=dk("t-"+(x.title||"")); if(!doneMap[k]) open.push({k:k,t:x.title||""}); });
+        (b.focus_today||[]).forEach(function(f){ var k=dk("f-"+f); if(!doneMap[k]&&!killedMap[k]) open.push({k:k,t:f}); });
+        ((t&&t.p1)||[]).forEach(function(x){ var k=dk("t-"+(x.title||"")); if(!doneMap[k]&&!killedMap[k]) open.push({k:k,t:x.title||""}); });
         var rows=open.slice(0,6).map(function(o){
-          return '<div class="night-row"><span class="t">'+esc(o.t)+'</span>'+
-            (pushedMap[o.k]?'<span class="pushed">→ amanhã ✓</span>':'<button class="push-btn" type="button" data-push="'+o.k+'" data-ptitle="'+esc(o.t)+'">→ amanhã</button>')+'</div>';
+          return '<div class="night-row"><span class="t">'+esc(o.t)+'</span>'+pushBtn(o.k,o.t)+'</div>';
         }).join("");
         h+=card("🌙 Fechar o dia",'<span class="badge">✓ '+nDone2+' hoje</span>',
           (rows||'<div class="empty">Tudo feito. 👏</div>')+
@@ -479,12 +729,14 @@
       }
     }
 
-    if(Array.isArray(b.focus_today)&&b.focus_today.length){
+    // §9 dedupe: o item que já é a Única Coisa não se repete aqui (repetir anestesia)
+    var focusRest=(b.focus_today||[]).filter(function(f){ return f!==oneTitle; });
+    if(focusRest.length){
       var nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
       var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
                  (nD?'<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 '+nD+'</span>':'');
-      h+=card("🎯 Foco do dia",badges,
-        '<div class="focus">'+b.focus_today.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k,f)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
+      h+=card("🎯 Depois dela",badges,
+        '<div class="focus">'+focusRest.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k,f)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
     }
 
     // ✍️ Capturado — input humano aguardando triagem (some quando a rotina processa)
@@ -554,13 +806,16 @@
     h+=card("📅 Agenda · 3 dias","",ag);
 
     var tk="", tTot=0, tDone=0;
-    function tkRow(lab,labCls,title,link,sub,key){
+    function tkRow(lab,labCls,title,link,sub,key,item){
+      if(title===oneTitle) return "";           // §9 dedupe — vive só no card Única Coisa
       var k=dk("t-"+title), dn=doneMap[k]; tTot++; if(dn) tDone++;
-      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+staleBadge(key||k)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
+      // §3 envelhecimento visual: cinco P1 idênticos = nenhum P1; a idade diferencia
+      var sd=stalledOf(item,key||k), dot=sd!=null?'<span class="agedot '+ageCls(sd)+'" title="parado há '+sd+'d"></span>':"";
+      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+dot+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+staleBadge(key||k)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
     }
-    (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"",x.key);});
-    (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"",x.key);});
-    (t.cold_followups||[]).forEach(function(x){tk+=tkRow("followup "+(x.days!=null?x.days+"d":""),"fu",x.name,x.link,x.context?esc(x.context):"");});
+    (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"",x.key,x);});
+    (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"",x.key,x);});
+    (t.cold_followups||[]).forEach(function(x){tk+=tkRow("followup "+(x.days!=null?x.days+"d":""),"fu",x.name,x.link,x.context?esc(x.context):"",null,x);});
     if(!tk) tk='<div class="empty">Nada pendente.</div>';
     h+=card("📋 Tasks",tTot?'<span class="badge" style="background:rgba(21,128,61,.12);color:var(--green)">✓ '+tDone+'/'+tTot+'</span>':"",tk);
 
@@ -582,14 +837,9 @@
       }).join(""));
     }
 
-    var sg=[];
-    if(sig.open_p1!=null) sg.push('<span><b>'+sig.open_p1+'</b>P1 abertos</span>');
-    if(sig.cold_followups!=null) sg.push('<span><b>'+sig.cold_followups+'</b>followups frios</span>');
-    if(sig.wiki_pages!=null) sg.push('<span><b>'+sig.wiki_pages+'</b>páginas wiki</span>');
-    if(sig.decisions!=null) sg.push('<span><b>'+sig.decisions+'</b>decisões</span>');
-    // 🛰️ prova de cobertura — confiança auditável: o que a rotina de fato varreu
-    if(b.coverage) sg.push('<span style="opacity:.8">🛰️ '+esc(b.coverage)+'</span>');
-    if(sg.length) h+=card("📊 Métricas","",'<div class="sig">'+sg.join("")+'</div>');
+    // §9: card 📊 Métricas cortado (vaidade — o lugar disso é o relatório do Conselheiro).
+    // Sobrevive só o placar de fechamentos, que é o north star, e a prova de cobertura no rodapé.
+    h+=closesCard(b);
 
     // 🤖 Frota de agentes — quem trabalha pra você, última rodada, histórico
     (function(){
@@ -624,6 +874,10 @@
       fb+='<div class="fh-h">📄 últimos briefings (toque para reler)</div><div id="fleetHist">'+fhBody+'</div>';
       h+=card("🤖 Frota","",fb);
     })();
+    h+=streakLine();
+    h+=sparkHtml(b);
+    // 🛰️ prova de cobertura — confiança auditável, agora no rodapé (§9)
+    if(b.coverage) h+='<div class="cov">🛰️ '+esc(b.coverage)+'</div>';
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
   }
 
@@ -643,20 +897,76 @@
     if(cb){
       var dkk=cb.getAttribute("data-done"), ttl=cb.getAttribute("data-title")||"";
       if(doneMap[dkk]){ delete doneMap[dkk]; undoDoneCapture(dkk); }
-      else { doneMap[dkk]=1; if(ttl) queueDoneCapture(dkk,ttl); }
+      else { doneMap[dkk]=1; if(ttl) queueDoneCapture(dkk,ttl); markShip(); mAct("done"); }
       try{ localStorage.setItem(doneKey,JSON.stringify(doneMap)); }catch(err){}
       if(window.__snap) render(window.__snap);
       return;
     }
-    // 🌙 empurrar item pra amanhã (vira captura "push: …")
-    var pb=e.target.closest&&e.target.closest(".push-btn");
+    // 🎯 [feito ✓] do Card Única Coisa / lote — mesmo contrato done: do check
+    var od=e.target.closest&&e.target.closest("[data-onedone]");
+    if(od){
+      var ok=od.getAttribute("data-onedone"), ot=od.getAttribute("data-title")||"";
+      if(doneMap[ok]){ delete doneMap[ok]; undoDoneCapture(ok); }
+      else {
+        doneMap[ok]=1; if(ot) queueDoneCapture(ok,ot); markShip();
+        mAct(od.getAttribute("data-close")?"close":"done");
+        var box=od.closest(".one"); if(box) box.classList.add("shipped");   // celebração sóbria
+        toast("✓ Fechado. Você é o cara que fecha.");
+      }
+      try{ localStorage.setItem(doneKey,JSON.stringify(doneMap)); }catch(err){}
+      if(window.__snap) setTimeout(function(){ render(window.__snap); },520);
+      return;
+    }
+    // 📋 copiar rascunho do Executor (§5) — copiar ≠ enviar; o envio é sempre ato humano
+    var cpy=e.target.closest&&e.target.closest("[data-copy]");
+    if(cpy){
+      var dkey=cpy.getAttribute("data-copy"), snapB=(window.__snap&&window.__snap.briefing&&window.__snap.briefing.data)||{};
+      var body=((snapB.drafts||{})[dkey])||"";
+      mAct("copy");
+      if(body&&navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(body).then(function(){ toast("📋 Rascunho copiado — cola e envia."); },
+          function(){ $("modalBody").textContent=body; $("modal").hidden=false; });
+      } else { $("modalBody").textContent=body||"(sem rascunho)"; $("modal").hidden=false; }
+      return;
+    }
+    // §3 3º adiamento: a UI força a honestidade que a lista esconde
+    var ak=e.target.closest&&e.target.closest("[data-askkill]");
+    if(ak){
+      var akk=ak.getAttribute("data-askkill"), akt=ak.getAttribute("data-ptitle")||"";
+      var wrap=ak.parentNode;
+      wrap.innerHTML='<button class="act act-kill push-btn ask" type="button" data-kill="'+akk+'" data-ptitle="'+esc(akt)+'">☠️ matar</button> '+
+                     '<button class="act act-ghost push-btn" type="button" data-push="'+akk+'" data-ptitle="'+esc(akt)+'">manter</button>';
+      return;
+    }
+    // ☠️ óbito declarado — vira captura "kill:", a rotina arquiva e o Conselheiro registra
+    var kb=e.target.closest&&e.target.closest("[data-kill]");
+    if(kb){
+      var kk2=kb.getAttribute("data-kill"), kt=kb.getAttribute("data-ptitle")||"";
+      var kid="kill-"+todayStr()+"-"+kk2, q4=readQ();
+      if(!q4.some(function(x){return x.id===kid;})) q4.push({id:kid,text:"kill: "+kt,capturedAt:new Date().toISOString(),source:"dashboard-kill"});
+      writeQ(q4); killedMap[kk2]=1; delete pushCount[kk2]; savePushCount();
+      try{ localStorage.setItem(killedKey,JSON.stringify(killedMap)); }catch(err){}
+      mAct("kill"); flushCap(); toast("☠️ Morto. Um a menos mentindo na lista.");
+      if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🌙 empurrar item pra amanhã (vira captura "push: …") — com custo progressivo (§3)
+    var pb=e.target.closest&&e.target.closest("[data-push]");
     if(pb){
       var pk=pb.getAttribute("data-push"), pt=pb.getAttribute("data-ptitle")||"";
       var pid="push-"+todayStr()+"-"+pk, q2=readQ();
       if(!q2.some(function(x){return x.id===pid;})) q2.push({id:pid,text:"push: "+pt,capturedAt:new Date().toISOString(),source:"night"});
       writeQ(q2); pushedMap[pk]=1;
+      pushCount[pk]=(pushCount[pk]||0)+1; savePushCount();
       try{ localStorage.setItem(pushedKey,JSON.stringify(pushedMap)); }catch(err){}
-      flushCap(); if(window.__snap) render(window.__snap);
+      mAct("push"); flushCap(); if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🌅 "ver o resto do dia →" — expande a visão completa até fechar a aba
+    if(e.target&&e.target.id==="btnFull"){
+      setFull(); mAct("expand");
+      if(window.__snap) render(window.__snap);
+      loadFleetHist();   // a Frota só existe na visão completa — carrega ao expandir
       return;
     }
     // 🌙 guardar pensamento noturno (vira captura "note: …")
