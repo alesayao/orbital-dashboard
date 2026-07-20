@@ -616,7 +616,12 @@
         "Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais + 1 pergunta.",
         lastTxt(fl.conselheiro), GHSB+"/tree/main/outputs/semanais");
       if(!b.fleet) fb+='<div class="sub" style="opacity:.55;font-size:.72rem;margin-top:6px">Última rodada de Executor/Conselheiro aparece quando a rotina emitir <code>fleet</code> — até lá, heartbeats.log ↗</div>';
-      fb+='<div class="fh-h">📄 últimos briefings (toque para reler)</div><div id="fleetHist"><div class="empty" style="font-size:.75rem">carregando…</div></div>';
+      var fhCache=(window.__fleetHist||[]);
+      var fhBody=fhCache.length?fhCache.map(function(row,i){
+        var d=(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10);
+        return '<div class="fh-row" data-fh="'+i+'"><span class="d">'+esc(d)+'</span><span class="a">'+ago(row.createdAt)+'</span></div>';
+      }).join(""):'<div class="empty" style="font-size:.75rem">carregando…</div>';
+      fb+='<div class="fh-h">📄 últimos briefings (toque para reler)</div><div id="fleetHist">'+fhBody+'</div>';
       h+=card("🤖 Frota","",fb);
     })();
     $("content").innerHTML=h||'<div class="empty">Sem dados ainda. A rotina matinal popula isto.</div>';
