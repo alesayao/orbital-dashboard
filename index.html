@@ -69,6 +69,11 @@
   .ev2 .flag{margin-top:2px;font-size:11px;font-weight:600;color:var(--muted);background:rgba(100,116,139,.12);padding:1px 6px;border-radius:6px;display:inline-block;align-self:flex-start}
   .ev2 .flag.hot{font-weight:700;color:var(--red);background:var(--red-bg)}
   .ev2.past{opacity:.45}
+  /* convite não confirmado (confirmed:false) — está na agenda, mas você não aceitou.
+     Aparece sempre: sumir com ele é o que fazia o AGORA mentir. */
+  .ev2.unconf{border-left-style:dashed;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+  .ev2.unconf .ev2-ti{font-weight:500}
+  .ev2 .invite{margin-top:2px;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--muted);background:rgba(120,120,128,.12);padding:1px 6px;border-radius:6px;display:inline-block;align-self:flex-start}
   .nowline{border-top:2px solid var(--accent);position:relative;margin:8px 0 6px}
   .nowline::before{content:"agora";position:absolute;top:-8px;left:0;font-size:9px;font-weight:800;color:var(--accent);background:var(--card);padding-right:5px;text-transform:uppercase;letter-spacing:.05em}
   /* ⏰ AGORA strip */
@@ -505,11 +510,16 @@
   function chk(k,ttl){ return '<span class="chk" data-done="'+k+'"'+(ttl?' data-title="'+esc(ttl)+'"':'')+'></span>'; }
   // dieta de saliência: flag vermelha só se for risco real
   function flagHtml(f){ var hot=/conflito|choca|prazo|zero buffer|overdue|vencid|urgente/i.test(f); return '<div class="flag'+(hot?' hot':'')+'">'+(hot?'⚠️ ':'')+esc(f)+'</div>'; }
+  // convite pendente = confirmed:false explícito. Ausência do campo NÃO vira convite
+  // (payload legado não tem o campo — assumir "não confirmado" tracejaria a agenda inteira).
+  function isUnconf(e){ return e && e.confirmed===false; }
   function evBlock(e,hpx,startTxt,xcls){
     var ti=e.link?('<a class="evlnk" href="'+esc(e.link)+'" target="_blank" rel="noopener">'+esc(e.title||"")+'</a>'):esc(e.title||"");
     var tline=startTxt+(e.end?'–'+esc(e.end):'');
-    return '<div class="ev2'+(xcls?' '+xcls:'')+'" style="min-height:'+hpx+'px">'+(tline?'<div class="ev2-t">'+esc(tline)+'</div>':'')+'<div class="ev2-ti">'+ti+'</div>'+
+    var un=isUnconf(e);
+    return '<div class="ev2'+(xcls?' '+xcls:'')+(un?' unconf':'')+'" style="min-height:'+hpx+'px">'+(tline?'<div class="ev2-t">'+esc(tline)+'</div>':'')+'<div class="ev2-ti">'+ti+'</div>'+
       ((e.participants&&e.participants.length)?'<div class="p">'+esc(e.participants.join(", "))+'</div>':'')+
+      (un?'<div class="invite">convite · não confirmado</div>':'')+
       ((e.flags&&e.flags.length)?e.flags.map(flagHtml).join(""):'')+'</div>';
   }
   function renderDay(day){
@@ -692,9 +702,11 @@
       var cur=null,nxt=null;
       evs.forEach(function(x){ if(x.st<=nm&&nm<x.en&&!cur) cur=x; if(x.st>nm&&!nxt) nxt=x; });
       var main="",cd="",sub="";
-      if(cur){ main=esc(cur.e.title||"reunião"); cd="agora"+(cur.e.end?" · até "+esc(cur.e.end):"");
+      // convite pendente entra no AGORA (esconder é o que fazia o strip mentir), mas
+      // nomeado como convite — o strip nunca afirma que você está numa reunião que não aceitou.
+      if(cur){ main=esc(cur.e.title||"reunião")+(isUnconf(cur.e)?" (convite)":""); cd="agora"+(cur.e.end?" · até "+esc(cur.e.end):"");
         if(nxt) sub="depois: "+esc(nxt.e.title||"")+" às "+esc(nxt.e.start||nxt.e.time||""); }
-      else if(nxt){ var dmin=nxt.st-nm; main=esc(nxt.e.title||""); cd="em "+fmtDur(dmin);
+      else if(nxt){ var dmin=nxt.st-nm; main=esc(nxt.e.title||"")+(isUnconf(nxt.e)?" (convite)":""); cd="em "+fmtDur(dmin);
         // §6 slot útil, não censo de slots: um recorte acionável, com o item nomeado
         if(oneTitle) sub="dá pra matar antes ("+fmtDur(dmin)+"): "+esc(oneTitle); }
       else { main=oneTitle?esc(oneTitle):"agenda livre"; cd="resto do dia livre"; }
