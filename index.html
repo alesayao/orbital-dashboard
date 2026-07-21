@@ -309,11 +309,27 @@
 .ftile{cursor:pointer}
 .ftile:hover{border-color:var(--accent)}
 .ftile.open{border-color:var(--accent);background:var(--card)}
-.ag-detail{margin-top:10px;border-top:1px solid var(--line);padding-top:11px}
-.ag-detail .role{font-size:13px;color:var(--ink);opacity:.72;line-height:1.5}
-.ag-detail .last{font-size:13.5px;margin-top:10px;line-height:1.5}
-.ag-detail .last b{font-weight:700}
-.ag-detail .links{margin-top:9px;font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
+/* detalhe do agente — hierarquia executiva: o último trabalho primeiro,
+   histórico colapsado em seguida, e só então frequência/objetivo. */
+.ag-detail{margin-top:10px;border-top:1px solid var(--line);padding-top:12px}
+.ag-lbl{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.ag-when{font-size:11.5px;font-weight:700;color:var(--muted);margin-left:6px}
+.ag-sum{font-size:14.5px;line-height:1.45;margin-top:5px;font-weight:500}
+.ag-sum.vazio{font-size:13px;font-weight:400;color:var(--muted);line-height:1.5}
+.ag-detail .links{margin-top:8px;font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
+.ag-hist-t{margin-top:12px;border:0;background:transparent;color:var(--ink);font-size:12px;font-weight:700;
+  cursor:pointer;padding:5px 0;display:flex;align-items:center;gap:6px;width:100%;text-align:left}
+.ag-hist-t .cr{font-size:9px;color:var(--muted);transition:transform .15s}
+.ag-hist-t.open .cr{transform:rotate(90deg)}
+.ag-hist-t .cnt{color:var(--muted);font-weight:600}
+.ag-hist{border-left:2px solid var(--line);padding-left:10px;margin:2px 0 0 3px}
+.ag-hist .h{display:flex;gap:8px;align-items:baseline;padding:5px 0;cursor:pointer;font-size:12.5px;border-bottom:1px dashed var(--line)}
+.ag-hist .h:last-child{border-bottom:0}
+.ag-hist .h:hover{color:var(--accent)}
+.ag-hist .h .d{font-weight:600}
+.ag-hist .h .a{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.ag-meta{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.5}
+.ag-meta b{color:var(--ink);opacity:.75;font-weight:700}
 /* caixa de prompt — instrui um agente / pergunta sobre um item */
 .pbox{display:flex;gap:6px;margin-top:11px}
 .pbox textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
@@ -468,20 +484,24 @@
   // 🤖 histórico de briefings para a Frota (endpoint /history, type=briefing)
   var FLEET_HIST_API="https://inspiragoglobal.com.br/api/orbital/history?type=briefing&limit=7";
   window.__fleetHist=[];
+  // O histórico alimenta DOIS lugares (painel de Agentes e Biblioteca), então busca
+  // sempre que houver token — não depende mais de um elemento existir na tela.
   function loadFleetHist(){
-    var el=document.getElementById("fleetHist"); if(!el) return;
+    if(!getTok()||window.__fleetHistLoaded) return;
+    window.__fleetHistLoaded=1;
     fetch(FLEET_HIST_API,{headers:{"X-Orbital-Token":clean(getTok())}})
       .then(function(r){ return r.ok?r.json():null; })
       .then(function(j){
-        var el2=document.getElementById("fleetHist"); if(!el2) return;
-        if(!j||!j.history||!j.history.length){ el2.innerHTML='<div class="empty" style="font-size:.75rem">sem histórico ainda</div>'; return; }
-        window.__fleetHist=j.history;
-        el2.innerHTML=j.history.map(function(row,i){
-          var d=(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10);
-          return '<div class="fh-row" data-fh="'+i+'"><span class="d">'+esc(d)+'</span><span class="a">'+ago(row.createdAt)+'</span></div>';
-        }).join("");
+        window.__fleetHist=(j&&j.history)||[];
+        var el=document.getElementById("fleetHist");
+        if(el&&!window.__fleetHist.length) el.innerHTML='<div class="empty" style="font-size:.75rem">sem histórico ainda</div>';
+        if(window.__snap) render(window.__snap);
       })
-      .catch(function(){ var el3=document.getElementById("fleetHist"); if(el3) el3.innerHTML='<div class="empty" style="font-size:.75rem">histórico indisponível</div>'; });
+      .catch(function(){
+        window.__fleetHistLoaded=0;
+        var el3=document.getElementById("fleetHist");
+        if(el3) el3.innerHTML='<div class="empty" style="font-size:.75rem">histórico indisponível</div>';
+      });
   }
 
   var collapsed={};
@@ -738,7 +758,7 @@
   function agInfo(v){
     if(!v) return {last:null};
     if(typeof v==="string") return {last:v};
-    return {last:v.last||v.at||null, summary:v.summary, url:v.url};
+    return {last:v.last||v.at||null, summary:v.summary, url:v.url, history:v.history};
   }
   var GHSB="https://github.com/alesayao/second-brain";
   var AG=[
@@ -769,18 +789,45 @@
          '<div class="n"><span class="sdot '+st+'"></span>'+a.emoji+' '+esc(a.nome)+'</div>'+
          '<div class="st">'+esc(txt)+'</div></div>';
       if(open===a.k){
-        det='<div class="ag-detail"><div class="role">'+esc(a.cad)+' — '+esc(a.papel)+'</div>';
-        // O CoS é o autor do brief que está na tela: o "último trabalho" dele já está
-        // aqui, não precisa esperar a rotina emitir summary.
+        det='<div class="ag-detail">';
+        // ── 1. O último trabalho: o que o painel existe para mostrar ──
         var resumo=info.summary || (a.k==="cos" ? (b.editorial||b.state_line||"") : "");
-        if(resumo) det+='<div class="last"><b>Último:</b> '+esc(resumo)+'</div>';
-        else if(a.ondemand) det+='<div class="last" style="opacity:.7">Não roda sozinho — só quando você chama. A caixa abaixo é o chamado.</div>';
-        else det+='<div class="last" style="opacity:.7">Resumo do último trabalho chega no brief de amanhã, quando a rotina passar a emitir <code>fleet.'+esc(a.k)+'.summary</code>. O histórico completo já está no link abaixo.</div>';
+        var quando=info.last?ago(info.last):(a.k==="cos"&&s0.briefing?ago(s0.briefing.createdAt):"");
+        det+='<div><span class="ag-lbl">último '+(a.k==="cos"?"briefing":"trabalho")+'</span>'+
+             (quando?'<span class="ag-when">'+esc(quando)+'</span>':'')+'</div>';
+        if(resumo) det+='<div class="ag-sum">'+esc(resumo)+'</div>';
+        else if(a.ondemand) det+='<div class="ag-sum vazio">Não roda sozinho — só quando você chama. A caixa abaixo é o chamado.</div>';
+        else det+='<div class="ag-sum vazio">Ainda sem resumo aqui: chega no brief de amanhã, quando a rotina emitir <code>fleet.'+esc(a.k)+'.summary</code>. O histórico completo já está no link abaixo.</div>';
         var lk=[];
-        if(info.url) lk.push('<a class="lnk" href="'+esc(info.url)+'" target="_blank" rel="noopener">último output ↗</a>');
-        if(a.k==="cos"&&lastBrief) lk.push('<a class="lnk" href="#" data-brief="1">ler o brief de hoje</a>');
-        if(a.hist) lk.push('<a class="lnk" href="'+esc(a.hist)+'" target="_blank" rel="noopener">histórico ↗</a>');
+        if(a.k==="cos"&&lastBrief) lk.push('<a class="lnk" href="#" data-brief="1">ler completo</a>');
+        if(info.url) lk.push('<a class="lnk" href="'+esc(info.url)+'" target="_blank" rel="noopener">abrir arquivo ↗</a>');
+        if(a.hist) lk.push('<a class="lnk" href="'+esc(a.hist)+'" target="_blank" rel="noopener">todos ↗</a>');
         if(lk.length) det+='<div class="links">'+lk.join("")+'</div>';
+
+        // ── 2. Histórico, colapsado. CoS usa o endpoint /history (real, hoje);
+        //      os outros dependem de fleet.<k>.history vindo da rotina. ──
+        // o brief de hoje já está acima como "último" — histórico é o que veio ANTES
+        var atualDia=info.last?new Date(info.last).toDateString():null;
+        var hist=(a.k==="cos") ? (window.__fleetHist||[]).map(function(row,i){
+                    return {label:(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10),
+                            at:row.createdAt, idx:i};
+                  }).filter(function(x){ return !(atualDia&&x.at&&new Date(x.at).toDateString()===atualDia); })
+                  : (info.history||[]).map(function(x){ return {label:x.label||x.date||"", at:x.at||x.created, url:x.url}; });
+        if(hist.length){
+          var hOpen=!!window.__agHist;
+          det+='<button class="ag-hist-t'+(hOpen?" open":"")+'" type="button" data-aghist="1">'+
+               '<span class="cr">▸</span>histórico <span class="cnt">'+hist.length+'</span></button>';
+          if(hOpen) det+='<div class="ag-hist">'+hist.slice(0,7).map(function(x){
+            var inner='<span class="d">'+esc(x.label)+'</span>'+(x.at?'<span class="a">'+esc(ago(x.at))+'</span>':'');
+            return x.idx!=null ? '<div class="h fh-row" data-fh="'+x.idx+'">'+inner+'</div>'
+                               : (x.url?'<a class="h" href="'+esc(x.url)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">'+inner+'</a>'
+                                       :'<div class="h">'+inner+'</div>');
+          }).join("")+'</div>';
+        }
+
+        // ── 3. Complementar: frequência e objetivo, com peso menor ──
+        det+='<div class="ag-meta"><b>'+esc(a.cad)+'</b> · '+esc(a.papel)+'</div>';
+
         det+='<div class="pbox"><textarea id="agP" rows="2" placeholder="'+(a.ondemand?"o que você quer que ele revise?":"instruir "+esc(a.nome)+"…")+'" style="font-family:inherit"></textarea>'+
              '<button type="button" data-agsend="'+a.k+'">enviar</button></div>'+
              '<div class="phint">'+(a.ondemand
@@ -1175,6 +1222,12 @@
       pushCount[pk]=(pushCount[pk]||0)+1; savePushCount();
       try{ localStorage.setItem(pushedKey,JSON.stringify(pushedMap)); }catch(err){}
       mAct("push"); flushCap(); if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🤖 abrir/fechar o histórico dentro do detalhe do agente
+    if(e.target.closest&&e.target.closest("[data-aghist]")){
+      window.__agHist=!window.__agHist;
+      if(window.__snap) render(window.__snap);
       return;
     }
     // 🌅 ler o brief de hoje (o "último output" do CoS já está na tela)
