@@ -309,18 +309,19 @@
 .ftile{cursor:pointer}
 .ftile:hover{border-color:var(--accent)}
 .ftile.open{border-color:var(--accent);background:var(--card)}
-.ag-detail{margin-top:8px;border-top:1px solid var(--line);padding-top:9px}
-.ag-detail .role{font-size:12px;color:var(--muted);line-height:1.4}
-.ag-detail .last{font-size:12.5px;margin-top:7px;line-height:1.45}
+.ag-detail{margin-top:10px;border-top:1px solid var(--line);padding-top:11px}
+.ag-detail .role{font-size:13px;color:var(--ink);opacity:.72;line-height:1.5}
+.ag-detail .last{font-size:13.5px;margin-top:10px;line-height:1.5}
 .ag-detail .last b{font-weight:700}
+.ag-detail .links{margin-top:9px;font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
 /* caixa de prompt — instrui um agente / pergunta sobre um item */
-.pbox{display:flex;gap:6px;margin-top:9px}
+.pbox{display:flex;gap:6px;margin-top:11px}
 .pbox textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
-  font:13px/1.4 inherit;padding:8px 10px;resize:vertical;outline:none;min-height:38px}
+  font-family:inherit;font-size:13.5px;line-height:1.45;padding:9px 11px;resize:vertical;outline:none;min-height:40px}
 .pbox textarea:focus{border-color:var(--accent)}
-.pbox button{border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;padding:0 13px;cursor:pointer;white-space:nowrap}
+.pbox button{border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:0 15px;cursor:pointer;white-space:nowrap}
 .pbox button:active{transform:scale(.97)}
-.phint{font-size:10.5px;color:var(--muted);margin-top:5px;font-style:italic}
+.phint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
 /* detalhe expansível de um item da Central */
 .tk-q{border:0;background:transparent;color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:6px;margin-left:6px}
 .tk-q:hover{background:rgba(120,120,128,.14);color:var(--accent)}
@@ -739,15 +740,20 @@
     if(typeof v==="string") return {last:v};
     return {last:v.last||v.at||null, summary:v.summary, url:v.url};
   }
+  var GHSB="https://github.com/alesayao/second-brain";
   var AG=[
     {k:"cos",  emoji:"🌅", nome:"Chief of Staff", cad:"cloud · 6h30 diário", lim:26,
-     papel:"Autor do brief: prioriza teus blockers, escolhe a Única Coisa pela pergunta do dominó e denuncia quem da frota não rodou."},
+     papel:"Autor do brief: prioriza teus blockers, escolhe a Única Coisa pela pergunta do dominó e denuncia quem da frota não rodou.",
+     hist:GHSB+"/tree/main/outputs/briefings"},
     {k:"executor", emoji:"🧹", nome:"Executor", cad:"local · 18h15 úteis", lim:30,
-     papel:"Cata o burocrático travado (cobranças, contratos, follow-ups) e deixa rascunhos prontos — nunca envia nada sozinho."},
+     papel:"Cata o burocrático travado (cobranças, contratos, follow-ups) e deixa rascunhos prontos — nunca envia nada sozinho.",
+     hist:GHSB+"/blob/main/outputs/heartbeats.log"},
     {k:"conselheiro", emoji:"♟️", nome:"Conselheiro", cad:"local · sexta 19h", lim:8*24,
-     papel:"Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais."},
-    {k:"guardiao", emoji:"🛡️", nome:"Guardião", cad:"sob demanda", lim:null,
-     papel:"Revisa output executivo contra as 3 lacunas: auto-desconto, escopo demais, pedido ausente."}
+     papel:"Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais.",
+     hist:GHSB+"/tree/main/outputs/semanais"},
+    {k:"guardiao", emoji:"🛡️", nome:"Guardião", cad:"sob demanda", lim:null, ondemand:true,
+     papel:"Revisa output executivo contra as 3 lacunas: auto-desconto, escopo demais, pedido ausente.",
+     hist:null}
   ];
   function fleetTiles(b,s0){
     var fl=b.fleet||{};
@@ -764,12 +770,22 @@
          '<div class="st">'+esc(txt)+'</div></div>';
       if(open===a.k){
         det='<div class="ag-detail"><div class="role">'+esc(a.cad)+' — '+esc(a.papel)+'</div>';
-        if(info.summary) det+='<div class="last"><b>Último:</b> '+esc(info.summary)+
-                              (info.url?' <a class="lnk" href="'+esc(info.url)+'" target="_blank" rel="noopener">abrir ↗</a>':'')+'</div>';
-        else det+='<div class="last" style="color:var(--muted)">Resumo do último trabalho aparece quando a rotina emitir <code>fleet.'+esc(a.k)+'.summary</code>.</div>';
-        det+='<div class="pbox"><textarea id="agP" rows="2" placeholder="instruir '+esc(a.nome)+'…"></textarea>'+
+        // O CoS é o autor do brief que está na tela: o "último trabalho" dele já está
+        // aqui, não precisa esperar a rotina emitir summary.
+        var resumo=info.summary || (a.k==="cos" ? (b.editorial||b.state_line||"") : "");
+        if(resumo) det+='<div class="last"><b>Último:</b> '+esc(resumo)+'</div>';
+        else if(a.ondemand) det+='<div class="last" style="opacity:.7">Não roda sozinho — só quando você chama. A caixa abaixo é o chamado.</div>';
+        else det+='<div class="last" style="opacity:.7">Resumo do último trabalho chega no brief de amanhã, quando a rotina passar a emitir <code>fleet.'+esc(a.k)+'.summary</code>. O histórico completo já está no link abaixo.</div>';
+        var lk=[];
+        if(info.url) lk.push('<a class="lnk" href="'+esc(info.url)+'" target="_blank" rel="noopener">último output ↗</a>');
+        if(a.k==="cos"&&lastBrief) lk.push('<a class="lnk" href="#" data-brief="1">ler o brief de hoje</a>');
+        if(a.hist) lk.push('<a class="lnk" href="'+esc(a.hist)+'" target="_blank" rel="noopener">histórico ↗</a>');
+        if(lk.length) det+='<div class="links">'+lk.join("")+'</div>';
+        det+='<div class="pbox"><textarea id="agP" rows="2" placeholder="'+(a.ondemand?"o que você quer que ele revise?":"instruir "+esc(a.nome)+"…")+'" style="font-family:inherit"></textarea>'+
              '<button type="button" data-agsend="'+a.k+'">enviar</button></div>'+
-             '<div class="phint">Vai para a fila do agente — ele lê na próxima rodada ('+esc(a.cad)+').</div></div>';
+             '<div class="phint">'+(a.ondemand
+                ? "Fica na fila até a próxima vez que o Guardião for acionado."
+                : "Vai para a fila do agente — ele lê na próxima rodada ("+esc(a.cad)+").")+'</div></div>';
       }
     });
     return card("🤖 Agentes","",'<div class="fleet4">'+t+'</div>'+det);
@@ -977,7 +993,7 @@
             (o.detail?'<div class="dt">'+esc(o.detail)+'</div>'
                      :'<div class="none">Sem detalhamento no brief. A rotina passa a mandar o contexto e o link da fonte a partir de amanhã.</div>')+
             (o.link?'<div style="margin-top:6px"><a class="lnk" href="'+esc(o.link)+'" target="_blank" rel="noopener">abrir fonte ↗</a></div>':'')+
-            '<div class="pbox"><textarea id="qP" rows="2" placeholder="o que é essa task? o que preciso fazer aqui?"></textarea>'+
+            '<div class="pbox"><textarea id="qP" rows="2" placeholder="o que é essa task? o que preciso fazer aqui?" style="font-family:inherit"></textarea>'+
             '<button type="button" data-qsend="'+esc(o.id)+'" data-qtitle="'+esc(o.title)+'">perguntar</button></div>'+
             '<div class="phint">Resposta no brief de amanhã de manhã — o CoS responde com o vault inteiro lido.</div></div>';
         }
@@ -1161,6 +1177,9 @@
       mAct("push"); flushCap(); if(window.__snap) render(window.__snap);
       return;
     }
+    // 🌅 ler o brief de hoje (o "último output" do CoS já está na tela)
+    var bl=e.target.closest&&e.target.closest("[data-brief]");
+    if(bl){ e.preventDefault(); $("modalBody").textContent=lastBrief||"(sem brief)"; $("modal").hidden=false; return; }
     // 🤖 abrir/fechar detalhe de um agente
     var agt=e.target.closest&&e.target.closest("[data-ag]");
     if(agt&&!e.target.closest("[data-agsend]")){
