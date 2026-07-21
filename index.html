@@ -76,13 +76,21 @@
   .ev2 .invite{margin-top:2px;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--muted);background:rgba(120,120,128,.12);padding:1px 6px;border-radius:6px;display:inline-block;align-self:flex-start}
   .nowline{border-top:2px solid var(--accent);position:relative;margin:8px 0 6px}
   .nowline::before{content:"agora";position:absolute;top:-8px;left:0;font-size:9px;font-weight:800;color:var(--accent);background:var(--card);padding-right:5px;text-transform:uppercase;letter-spacing:.05em}
-  /* ⏰ AGORA strip */
-  .now-strip{background:var(--ink);color:var(--card);border-radius:var(--radius);padding:13px 16px;margin-bottom:12px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;box-shadow:var(--shadow)}
-  .now-strip .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.65}
-  .now-strip .main{font-size:15.5px;font-weight:700;flex:1 1 240px;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .now-strip .cd{font-size:12.5px;font-weight:800;background:rgba(255,255,255,.16);padding:2px 10px;border-radius:20px;white-space:nowrap}
-  .now-strip .cd.done-cd{background:rgba(74,222,128,.28)}
-  .now-strip .sub{font-size:12.5px;opacity:.78;width:100%}
+  /* ⏰ AGORA — era um bloco preto full-width; virou cartão leve com âncora de cor.
+     O peso visual pertence ao Card Única Coisa, não ao relógio. */
+  .now-strip{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:12px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;box-shadow:var(--shadow)}
+  .now-strip .k{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .now-strip .main{font-size:14.5px;font-weight:700;flex:1 1 160px;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .now-strip .cd{font-size:11.5px;font-weight:800;color:var(--ink);background:rgba(120,120,128,.14);padding:2px 9px;border-radius:20px;white-space:nowrap}
+  .now-strip .cd.done-cd{color:var(--green);background:rgba(21,128,61,.12)}
+  .now-strip .sub{font-size:12px;color:var(--muted);width:100%}
+  /* cockpit — o topo deixa de ser pilha full-width e vira duas colunas */
+  .cockpit{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;align-items:start;margin-bottom:12px}
+  .ck-side>*:last-child{margin-bottom:0}
+  /* mobile: uma coluna, e a Única Coisa continua vindo PRIMEIRO — enterrá-la sob
+     agora/frota invertia a hierarquia que o cockpit existe para afirmar. */
+  @media (max-width:880px){ .cockpit{grid-template-columns:1fr} }
   /* check de conclusão (dopamina, local) */
   .chk{width:16px;height:16px;min-width:16px;border:1.5px solid var(--muted);border-radius:5px;display:inline-block;vertical-align:-3px;margin-right:8px;cursor:pointer;flex-shrink:0}
   .chk:hover{border-color:var(--green)}
@@ -241,7 +249,13 @@
 .one-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .act{border:0;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .1s}
 .act:active{transform:scale(.97)}
-.act-do{background:var(--ink);color:var(--card)}
+/* [marcar feito] — botão de AÇÃO, não estado. Preenchido escuro lia como "já feito";
+   agora é contornado com ○ vazio, e só vira verde sólido ✓ depois de fechado. */
+.act-do{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink);display:inline-flex;align-items:center;gap:7px}
+.act-do::before{content:"";width:15px;height:15px;border-radius:50%;box-shadow:inset 0 0 0 1.5px currentColor;flex-shrink:0}
+.act-do:hover{background:rgba(120,120,128,.08)}
+.act-done{background:var(--green);color:#fff;box-shadow:none}
+.act-done::before{content:"✓";width:auto;height:auto;box-shadow:none;font-size:13px;font-weight:800}
 .act-copy{background:var(--accent);color:#fff}
 .act-ghost{background:rgba(120,120,128,.16);color:var(--ink)}
 .act-warn{background:var(--yellow-bg);color:var(--yellow)}
@@ -281,6 +295,33 @@
 .push-btn.warn{background:var(--yellow-bg);color:var(--yellow)}
 .push-btn.ask{background:var(--red-bg);color:var(--red)}
 .cov{font-size:11.5px;color:var(--muted);text-align:center;padding:14px 0 0;opacity:.75}
+
+/* 🤖 Frota — 4 tiles compactos no topo (substitui a lista do rodapé) */
+.fleet4{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ftile{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:8px 10px;min-width:0}
+.ftile .n{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ftile .st{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block}
+.sdot.ok{background:var(--green)}
+.sdot.late{background:var(--orange)}
+.sdot.idle{background:var(--muted);opacity:.5}
+.ftile.alert{border-color:var(--orange);background:var(--orange-bg)}
+/* 🗂️ Biblioteca — notas e outputs do Claude */
+.libbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.libbtn{border:0;border-radius:11px;background:rgba(120,120,128,.14);color:var(--ink);font-size:12.5px;font-weight:700;padding:8px 13px;cursor:pointer}
+.libbtn:active{transform:scale(.97)}
+.libbtn.pri{background:var(--accent);color:#fff}
+.doc{padding:9px 0;border-bottom:1px solid var(--line);display:flex;gap:9px;align-items:flex-start}
+.doc:last-child{border:0}
+.doc .ic{font-size:14px;opacity:.6;margin-top:1px}
+.doc .bd{flex:1;min-width:0}
+.doc .ti{font-size:13.5px;font-weight:600;line-height:1.35}
+.doc .sm{font-size:12px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.doc .mt{font-size:10.5px;color:var(--muted);margin-top:3px}
+.doc .mt .src{background:rgba(120,120,128,.12);padding:1px 6px;border-radius:5px;margin-right:6px;font-weight:600}
+.doc a.open{color:var(--accent);text-decoration:none;font-weight:600}
+.doc a.open:hover{text-decoration:underline}
+#libFile{display:none}
 
 /* 🤖 Frota de agentes */
 .ag-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line,rgba(120,120,120,.15));flex-wrap:wrap}
@@ -339,6 +380,8 @@
     <div class="cap-foot"><span class="cap-hint">⏎ envia · ⇧⏎ nova linha</span><button id="capSave" class="cap-go" type="button">Capturar</button></div>
   </div>
 </div>
+
+<input type="file" id="libFile" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple />
 
 <div id="toast" hidden></div>
 
@@ -605,7 +648,7 @@
     h+='<div class="one-acts">';
     var draft=(b.drafts||{})[o.key||""]||(b.drafts||{})[slug(o.title||"")];
     if(draft) h+='<button class="act act-copy" type="button" data-copy="'+esc(o.key||slug(o.title||""))+'">📋 copiar rascunho</button>';
-    h+='<button class="act act-do'+(dn?" act-ghost":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(o.title||"")+'"'+(o.close?' data-close="1"':'')+'>'+(dn?"desfazer":"feito ✓")+'</button>';
+    h+='<button class="act act-do'+(dn?" act-done":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(o.title||"")+'"'+(o.close?' data-close="1"':'')+'>'+(dn?"feito":"marcar feito")+'</button>';
     if(!dn){
       // mesmo botão do ritual noturno, com peso de ação no card principal
       h+=pushBtn(k,o.title||"")
@@ -632,7 +675,7 @@
         '<div class="one-chal">Lote · '+esc(bt.minutes||10)+' min, zero produção</div>'+
         '<div class="one-ti" style="font-size:17px">'+esc(bt.title||"")+'</div>'+
         (items?'<div class="one-why">'+esc(items)+'</div>':'')+
-        '<div class="one-acts"><button class="act act-do'+(dn?" act-ghost":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(bt.title||"")+'" data-close="1">'+(dn?"desfazer":"lote fechado ✓")+'</button></div></div>';
+        '<div class="one-acts"><button class="act act-do'+(dn?" act-done":"")+'" type="button" data-onedone="'+k+'" data-title="'+esc(bt.title||"")+'" data-close="1">'+(dn?"lote fechado":"fechar o lote")+'</button></div></div>';
     }).join("");
   }
   function closesCard(b){
@@ -645,6 +688,68 @@
   function sparkHtml(b){
     if(!b.spark||!b.spark.title) return "";
     return '<div class="spark">🧠 <b>'+(b.spark.link?linkify(esc(b.spark.title),b.spark.link):esc(b.spark.title))+'</b></div>';
+  }
+
+  // 🤖 Frota — 4 tiles no topo. Silêncio = saúde: só quem NÃO rodou ganha destaque.
+  function hoursSince(iso){ return iso?((Date.now()-new Date(iso).getTime())/3600000):null; }
+  function fleetTiles(b,s0){
+    var fl=b.fleet||{};
+    var cosIso=(s0.briefing&&s0.briefing.createdAt)||null, cosH=hoursSince(cosIso);
+    var exH=hoursSince(fl.executor), coH=hoursSince(fl.conselheiro);
+    function tile(emoji,nome,st,txt){
+      return '<div class="ftile'+(st==="late"?" alert":"")+'"><div class="n"><span class="sdot '+st+'"></span>'+emoji+' '+esc(nome)+'</div>'+
+             '<div class="st">'+esc(txt)+'</div></div>';
+    }
+    // sem timestamp ≠ falhou: o dashboard só sabe o que o payload conta. Alarme só com
+    // dado que comprove atraso — senão a Frota gritaria todo dia em que a rotina omitisse fleet.
+    function st(h2,lim){ return h2==null?"idle":(h2<lim?"ok":"late"); }
+    var t="";
+    t+=tile("🌅","Chief of Staff", st(cosH,26),   cosIso?("brief "+ago(cosIso)):"sem registro");
+    t+=tile("🧹","Executor",       st(exH,30),    fl.executor?ago(fl.executor):"sem registro");
+    t+=tile("♟️","Conselheiro",    st(coH,8*24),  fl.conselheiro?ago(fl.conselheiro):"sem registro");
+    t+=tile("🛡️","Guardião","idle","sob demanda");
+    return card("🤖 Frota","",'<div class="fleet4">'+t+'</div>');
+  }
+
+  // 🗂️ Biblioteca — notas + .md importados + outputs do Claude Code/Cowork.
+  // Local: docs importados aqui (com fila de captura pro cofre). Remoto: briefing.library.
+  var DOCS="orbital_docs";
+  function readDocs(){ try{ return JSON.parse(localStorage.getItem(DOCS)||"[]"); }catch(e){ return []; } }
+  function writeDocs(d){ try{ localStorage.setItem(DOCS,JSON.stringify(d.slice(-40))); }catch(e){} }
+  function summarize(txt){
+    var t=String(txt||"").replace(/^---[\s\S]*?---\s*/,"")      // tira frontmatter
+      .replace(/^#{1,6}\s+/gm,"").replace(/[*_`>\[\]]/g,"")
+      .replace(/\s+/g," ").trim();
+    return t.slice(0,200)+(t.length>200?"…":"");
+  }
+  function docRow(d){
+    var link=d.url?('<a class="open" href="'+esc(d.url)+'" target="_blank" rel="noopener">abrir .md ↗</a>')
+                  :('<a class="open" href="#" data-doc="'+esc(d.id)+'">ver conteúdo</a>');
+    return '<div class="doc"><span class="ic">'+(d.kind==="nota"?"✎":"📄")+'</span><div class="bd">'+
+      '<div class="ti">'+esc(d.title||d.name||"(sem título)")+'</div>'+
+      (d.summary?'<div class="sm">'+esc(d.summary)+'</div>':'')+
+      '<div class="mt">'+(d.src?'<span class="src">'+esc(d.src)+'</span>':'')+
+      (d.at?esc(ago(d.at))+" · ":"")+(d.state==="pending"?"no cofre em breve · ":"")+link+'</div></div></div>';
+  }
+  function libCard(b){
+    var locais=readDocs().slice().reverse();
+    var remotos=(b.library||[]).map(function(x){
+      return {id:x.path||x.url,title:x.title,summary:x.summary,url:x.url,at:x.created,src:x.src||"cofre",kind:x.kind};
+    });
+    var todos=remotos.concat(locais);
+    var body='<div class="libbar">'+
+      '<button class="libbtn pri" id="btnNota" type="button">✎ escrever nota</button>'+
+      '<button class="libbtn" id="btnImport" type="button">⬆ importar .md</button></div>';
+    body+= todos.length ? todos.slice(0,40).map(docRow).join("")
+      : '<div class="empty">Nada ainda. Importe um .md do Claude ou escreva uma nota — e a rotina passa a listar aqui tudo que os agentes produzirem.</div>';
+    // briefings anteriores (endpoint /history) — releitura rápida
+    var fhCache=(window.__fleetHist||[]);
+    var fhBody=fhCache.length?fhCache.map(function(row,i){
+      var d0=(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10);
+      return '<div class="fh-row" data-fh="'+i+'"><span class="d">'+esc(d0)+'</span><span class="a">'+ago(row.createdAt)+'</span></div>';
+    }).join(""):'<div class="empty" style="font-size:.75rem">carregando…</div>';
+    body+='<div class="fh-h">📄 briefings anteriores (toque para reler)</div><div id="fleetHist">'+fhBody+'</div>';
+    return card("🗂️ Biblioteca",todos.length?'<span class="badge">'+todos.length+'</span>':"",body);
   }
 
   // 🌅 modo manhã (§1) — só o que faz a primeira ação acontecer em <60s
@@ -691,6 +796,7 @@
 
     // ⏰ AGORA — âncora de ação única (o que fazer neste exato momento)
     // §6: depois das 19h o strip cede lugar ao ritual noturno (nada de countdown pro dia seguinte)
+    var agoraHtml="";
     if(new Date().getHours()<19) (function(){
       var dayObj=null, ts=todayStr();
       (b.calendar||[]).forEach(function(d0){ if(d0.date===ts&&!dayObj) dayObj=d0; });
@@ -711,15 +817,11 @@
         if(oneTitle) sub="dá pra matar antes ("+fmtDur(dmin)+"): "+esc(oneTitle); }
       else { main=oneTitle?esc(oneTitle):"agenda livre"; cd="resto do dia livre"; }
       var nDone=0; try{ nDone=Object.keys(doneMap).length; }catch(e){}
-      h+='<div class="now-strip"><span class="k">⏰ agora</span><span class="main">'+main+'</span>'+
+      agoraHtml='<div class="now-strip"><span class="k">⏰ agora</span><span class="main">'+main+'</span>'+
          (cd?'<span class="cd">'+esc(cd)+'</span>':'')+
          (nDone?'<span class="cd done-cd">✓ '+nDone+' hoje</span>':'')+
          (sub?'<span class="sub">'+sub+'</span>':'')+'</div>';
     })();
-
-    // 🎯 A Única Coisa — mesmo card do modo manhã, no topo da visão completa
-    h+=oneCard(b,oneT,oneK);
-    h+=batchCards(b);
 
     // 🌙 Fechamento do dia — ritual de descarga (a partir das 19h)
     if(new Date().getHours()>=19){
@@ -742,19 +844,21 @@
     }
 
     // §9 dedupe: o item que já é a Única Coisa não se repete aqui (repetir anestesia)
-    var focusRest=(b.focus_today||[]).filter(function(f){ return f!==oneTitle; });
+    var focusRest=(b.focus_today||[]).filter(function(f){ return f!==oneTitle; }), depoisHtml="";
     if(focusRest.length){
       var nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
       var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
                  (nD?'<span class="badge" style="background:var(--yellow-bg);color:var(--yellow)">🟡 '+nD+'</span>':'');
-      h+=card("🎯 Depois dela",badges,
-        '<div class="focus">'+focusRest.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="f'+(dn?' done-item':'')+'">'+chk(k,f)+'<span class="n">'+(i+1)+'</span><span>'+esc(f)+'</span></div>';}).join("")+'</div>');
+      depoisHtml=card("🎯 Depois dela",badges,
+        focusRest.map(function(f,i){var k=dk("f-"+f),dn=doneMap[k];return '<div class="tk'+(dn?' done-item':'')+'" style="padding:6px 0">'+chk(k,f)+'<span class="n" style="color:var(--accent);font-weight:800;margin-right:6px">'+(i+1)+'</span>'+esc(f)+'</div>';}).join(""));
     }
 
+    var ckMain=oneCard(b,oneT,oneK)+batchCards(b);   // coluna esquerda; Central entra abaixo
+
     // ✍️ Capturado — input humano aguardando triagem (some quando a rotina processa)
-    var caps=capsForDisplay();
+    var caps=capsForDisplay(), capsHtml="";
     if(caps.length){
-      h+=card("✍️ Capturado",'<span class="badge" style="background:var(--orange-bg);color:var(--orange)">'+caps.length+' aguardando</span>',
+      capsHtml=card("✍️ Capturado",'<span class="badge" style="background:var(--orange-bg);color:var(--orange)">'+caps.length+' aguardando</span>',
         caps.map(function(c){
           var when=c.capturedAt?ago(c.capturedAt):"";
           var st=c.state==="sending"?"enviando…":"aguardando triagem";
@@ -807,8 +911,15 @@
       window.__tabInit=true; activeTab=act;
       var bar=tabs.map(function(tb){ return '<button class="tab-btn'+(tb.key===act?" active":"")+'" data-tab="'+tb.key+'">'+tb.label+(tb.n!=null?' <b>'+tb.n+'</b>':'')+'</button>'; }).join("");
       var panels=tabs.map(function(tb){ return '<div class="tab-panel" data-panel="'+tb.key+'"'+(tb.key===act?"":" hidden")+'>'+tb.html+'</div>'; }).join("");
-      h+=card("📥 Central","",'<div class="tabs">'+bar+'</div>'+panels,hasUrg);
+      ckMain+=card("📥 Central","",'<div class="tabs">'+bar+'</div>'+panels,hasUrg);
     }
+
+    // 🧭 Cockpit — trabalho à esquerda (Única Coisa + Central), contexto à direita
+    // (agora / depois dela / frota). Antes eram faixas full-width empilhadas, cada uma
+    // com metade da largura vazia; agora as duas colunas se equilibram.
+    h+='<div class="cockpit"><div class="ck-main">'+ckMain+'</div>'+
+       '<div class="ck-side">'+agoraHtml+depoisHtml+fleetTiles(b,s0)+'</div></div>';
+    h+=capsHtml;   // ✍️ Capturado — transitório, abaixo do cockpit
 
     // 📅 Agenda full-width — altura do evento ∝ duração + slots livres sintéticos
     var ag;
@@ -853,39 +964,8 @@
     // Sobrevive só o placar de fechamentos, que é o north star, e a prova de cobertura no rodapé.
     h+=closesCard(b);
 
-    // 🤖 Frota de agentes — quem trabalha pra você, última rodada, histórico
-    (function(){
-      var GHSB="https://github.com/alesayao/second-brain";
-      var fl=b.fleet||{};
-      function lastTxt(iso){ return iso?ago(iso):"—"; }
-      function agRow(emoji,name,cad,role,last,histUrl){
-        return '<div class="ag-row"><span class="ag-name">'+emoji+' '+name+'</span><span class="ag-cad">'+cad+'</span>'+
-          '<span class="ag-last">'+last+(histUrl?' · <a class="lnk" href="'+histUrl+'" target="_blank" rel="noopener">histórico ↗</a>':'')+'</span>'+
-          '<span class="ag-role">'+role+'</span></div>';
-      }
-      var fb='';
-      fb+=agRow("🌅","Chief of Staff","cloud · 6h30 diário",
-        "Autor do brief: prioriza teus 3 blockers, fecha com Foco do Dia (≤3) e vigia a frota — denúncia em 1 linha se alguém não rodou.",
-        (s0.briefing&&s0.briefing.createdAt)?ago(s0.briefing.createdAt):"—",
-        GHSB+"/tree/main/outputs/briefings");
-      fb+=agRow("🧹","Executor","local · 18h15 úteis",
-        "Cata o burocrático travado (cobranças, contratos, follow-ups) e deixa rascunhos prontos — nunca envia nada sozinho.",
-        lastTxt(fl.executor), GHSB+"/blob/main/outputs/heartbeats.log");
-      fb+=agRow("🛡️","Guardião","sob demanda",
-        "Revisa output executivo contra as 3 lacunas: auto-desconto, escopo demais, pedido ausente.",
-        "sob demanda", null);
-      fb+=agRow("♟️","Conselheiro","local · sexta 19h",
-        "Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais + 1 pergunta.",
-        lastTxt(fl.conselheiro), GHSB+"/tree/main/outputs/semanais");
-      if(!b.fleet) fb+='<div class="sub" style="opacity:.55;font-size:.72rem;margin-top:6px">Última rodada de Executor/Conselheiro aparece quando a rotina emitir <code>fleet</code> — até lá, heartbeats.log ↗</div>';
-      var fhCache=(window.__fleetHist||[]);
-      var fhBody=fhCache.length?fhCache.map(function(row,i){
-        var d=(row.data&&row.data.date_label)||String(row.createdAt||"").slice(0,10);
-        return '<div class="fh-row" data-fh="'+i+'"><span class="d">'+esc(d)+'</span><span class="a">'+ago(row.createdAt)+'</span></div>';
-      }).join(""):'<div class="empty" style="font-size:.75rem">carregando…</div>';
-      fb+='<div class="fh-h">📄 últimos briefings (toque para reler)</div><div id="fleetHist">'+fhBody+'</div>';
-      h+=card("🤖 Frota","",fb);
-    })();
+    // 🗂️ Biblioteca — notas, .md importados e outputs dos agentes (colapsável)
+    h+=libCard(b);
     h+=streakLine();
     h+=sparkHtml(b);
     // 🛰️ prova de cobertura — confiança auditável, agora no rodapé (§9)
@@ -974,6 +1054,19 @@
       mAct("push"); flushCap(); if(window.__snap) render(window.__snap);
       return;
     }
+    // 🗂️ biblioteca — ver conteúdo de um doc local (ainda sem .md no cofre)
+    var dv=e.target.closest&&e.target.closest("[data-doc]");
+    if(dv){
+      e.preventDefault();
+      var did=dv.getAttribute("data-doc"), doc=readDocs().filter(function(x){return x.id===did;})[0];
+      $("modalBody").textContent=(doc&&doc.text)||"(conteúdo indisponível)";
+      $("modal").hidden=false;
+      return;
+    }
+    // 🗂️ escrever nota — reusa a captura (a rotina tria e arquiva no cofre)
+    if(e.target&&e.target.id==="btnNota"){ openCap(); return; }
+    // 🗂️ importar .md gerado no Claude
+    if(e.target&&e.target.id==="btnImport"){ $("libFile").click(); return; }
     // 🌅 "ver o resto do dia →" — expande a visão completa até fechar a aba
     if(e.target&&e.target.id==="btnFull"){
       setFull(); mAct("expand");
@@ -1036,12 +1129,14 @@
     var id="done-"+todayStr()+"-"+k;
     writeQ(readQ().filter(function(x){return x.id!==id;}));  // se já foi enviada, deixa — caso raro
   }
-  function updFab(){ var n=readQ().filter(function(x){return x.source!=="dashboard-done";}).length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
+  // done: e doc[...] são write-back, não caixa de entrada — não contam no badge nem no card Capturado
+  function silent(src){ return src==="dashboard-done"||src==="dashboard-doc"; }
+  function updFab(){ var n=readQ().filter(function(x){return !silent(x.source);}).length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
   // capturas a exibir = fila local (ainda enviando) + pendentes no backend (aguardando triagem), sem duplicar
   function capsForDisplay(){
     var local=readQ(), remote=window.__pendingCaps||[], seen={}, out=[];
-    local.forEach(function(x){ seen[x.id]=1; if(x.source!=="dashboard-done") out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
-    remote.forEach(function(x){ if(seen[x.id]||x.source==="dashboard-done")return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
+    local.forEach(function(x){ seen[x.id]=1; if(!silent(x.source)) out.push({text:x.text,capturedAt:x.capturedAt,state:"sending"}); });
+    remote.forEach(function(x){ if(seen[x.id]||silent(x.source))return; out.push({text:x.text,capturedAt:x.capturedAt||x.captured_at,state:"pending"}); });
     return out;
   }
   // 🧊 radar de emperrado — compara briefs anteriores via /history; identidade = task.key
@@ -1109,6 +1204,35 @@
     var q=readQ(); q.push({id:capId(),text:txt,capturedAt:new Date().toISOString(),source:"manual"}); writeQ(q);
     closeCap(); updFab(); if(window.__snap) render(window.__snap); toast(getTok()?"✓ Capturado":"✓ Salvo (entra ao logar)"); flushCap();
   }
+  // 🗂️ importar .md: lê local, guarda preview e enfileira captura doc[...] pro cofre.
+  // O envio é a mesma fila idempotente das capturas — offline não perde nada.
+  $("libFile").addEventListener("change",function(ev){
+    var fs=[].slice.call(ev.target.files||[]); if(!fs.length) return;
+    var LIM=200000, lidos=0;
+    fs.forEach(function(f){
+      var r=new FileReader();
+      r.onload=function(){
+        var txt=String(r.result||"");
+        if(txt.length>LIM) txt=txt.slice(0,LIM)+"\n\n[…truncado na importação]";
+        var id="doc-"+todayStr()+"-"+slug(f.name);
+        var docs=readDocs().filter(function(x){return x.id!==id;});
+        docs.push({id:id,title:f.name.replace(/\.(md|markdown|txt)$/i,""),name:f.name,
+          summary:summarize(txt),text:txt,at:new Date().toISOString(),src:"importado",kind:"doc",state:"pending"});
+        writeDocs(docs);
+        var q=readQ();
+        if(!q.some(function(x){return x.id===id;}))
+          q.push({id:id,text:"doc["+f.name+"]: "+txt,capturedAt:new Date().toISOString(),source:"dashboard-doc"});
+        writeQ(q);
+        if(++lidos===fs.length){
+          flushCap(); toast("📄 "+lidos+(lidos>1?" arquivos importados":" arquivo importado"));
+          if(window.__snap) render(window.__snap);
+        }
+      };
+      r.onerror=function(){ toast("Falha ao ler "+f.name); };
+      r.readAsText(f);
+    });
+    ev.target.value="";
+  });
   $("fab").addEventListener("click",openCap);
   $("capSave").addEventListener("click",saveCap);
   $("capClose").addEventListener("click",closeCap);
