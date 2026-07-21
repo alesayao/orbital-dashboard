@@ -550,6 +550,25 @@
   function setFull(){ try{ sessionStorage.setItem("orbital_full","1"); }catch(e){ window.__full=1; } }
   function isMorning(){ return new Date().getHours()<9 && !fullForced(); }
   function dk(s){ return slug(String(s).slice(0,80)); }
+  // Mesmo item, redação diferente. A rotina reescreve o título a cada rodada e a cada
+  // seção — em 21/jul o contrato da Noemi veio como "Enviar contrato de Noemi",
+  // "Enviar contrato Noemi" e "Enviar contrato Noemi (25 dias travado)". Igualdade exata
+  // não pega; prefixo também não (a palavra "de" no meio já quebra). Comparação por
+  // conjunto de tokens significativos: um título contido no outro = mesmo item.
+  var STOP={de:1,da:1,do:1,das:1,dos:1,para:1,pra:1,com:1,em:1,no:1,na:1,um:1,uma:1,
+            ao:1,aos:1,dia:1,dias:1,que:1,por:1,sobre:1};
+  function toks(s){
+    return dk(s||"").split("-").filter(function(w){
+      return w.length>2 && !STOP[w] && !/^\d+$/.test(w);
+    });
+  }
+  function sameItem(a,b2){
+    var x=toks(a), y=toks(b2);
+    if(x.length<2||y.length<2) return false;      // título curto demais: não arrisca
+    var small=x.length<=y.length?x:y, big=x.length<=y.length?y:x, set={};
+    big.forEach(function(w){ set[w]=1; });
+    return small.every(function(w){ return set[w]; });
+  }
   function chk(k,ttl){ return '<span class="chk" data-done="'+k+'"'+(ttl?' data-title="'+esc(ttl)+'"':'')+'></span>'; }
   // dieta de saliência: flag vermelha só se for risco real
   function flagHtml(f){ var hot=/conflito|choca|prazo|zero buffer|overdue|vencid|urgente/i.test(f); return '<div class="flag'+(hot?' hot':'')+'">'+(hot?'⚠️ ':'')+esc(f)+'</div>'; }
@@ -843,8 +862,10 @@
       }
     }
 
-    // §9 dedupe: o item que já é a Única Coisa não se repete aqui (repetir anestesia)
-    var focusRest=(b.focus_today||[]).filter(function(f){ return f!==oneTitle; }), depoisHtml="";
+    // §9 dedupe: o item que já é a Única Coisa não se repete aqui (repetir anestesia).
+    // Comparação frouxa por prefixo — a rotina reescreve o mesmo item ("Enviar contrato
+    // Noemi" vs "…Noemi (25 dias travado)"), então igualdade exata deixava passar.
+    var focusRest=(b.focus_today||[]).filter(function(f){ return !sameItem(f,oneTitle); }), depoisHtml="";
     if(focusRest.length){
       var nU=(b.urgent||[]).length, nD=(b.decisions||[]).length;
       var badges=(nU?'<span class="badge" style="background:var(--red-bg);color:var(--red)">🔴 '+nU+'</span> ':'')+
@@ -866,29 +887,68 @@
         }).join(""));
     }
 
-    // 📥 Central — uma caixa com abas (Urgente / Decisões / Cobrar / Caixa)
-    var tabs=[];
-    if(Array.isArray(b.urgent)&&b.urgent.length){
-      tabs.push({key:"urgente",label:"🔴 Urgente",n:b.urgent.length,html:
-        b.urgent.map(function(x){
-          var who=x.who?'<span class="who">'+esc(x.who)+'</span>':'';
-          return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+who+'</div>'+(x.why?'<div class="why">'+esc(x.why)+'</div>':'')+'</div>';
-        }).join("")});
+    // 📥 Central — raias por QUEM ESTÁ COM A BOLA, não por canal de origem.
+    // Central e Tasks descreviam o mesmo item por ângulos diferentes: em 21/jul o contrato
+    // da Noemi aparecia 3× (urgent + p1 + overdue) com 3 redações. Dedupe por `key` —
+    // por título não funciona, porque a rotina reescreve o texto a cada rodada.
+    var tabs=[], visto={};
+    function idOf(x,ti){ return x&&x.key ? ("k:"+String(x.key).toLowerCase()) : ("t:"+dk(ti||(x&&x.title)||"")); }
+    var oneId=oneT?idOf(oneT,oneTitle):null;
+    // sem key nos dois lados, cai no match frouxo por título (urgent hoje não traz key)
+    function isOne(x,ti){ return oneId&&idOf(x,ti)===oneId || (oneTitle&&sameItem(ti,oneTitle)); }
+    // "Comigo": urgent + p1 + overdue fundidos. O título do registro de tasks vence
+    // (é o que gerou as chaves done-/push- existentes — trocar quebraria o write-back).
+    var mine=[], byId={};
+    function addMine(x,ti,src){
+      var id=idOf(x,ti); if(isOne(x,ti)) return;             // já vive no Card Única Coisa
+      // item já promovido a "Depois dela" não se repete na raia geral
+      for(var fi=0;fi<focusRest.length;fi++){ if(sameItem(focusRest[fi],ti)) return; }
+      // urgent não traz `key` hoje, então o id não casa com o de p1/overdue —
+      // cai no match por tokens contra o que já entrou na raia.
+      var o=byId[id];
+      if(!o){ for(var i=0;i<mine.length;i++){ if(sameItem(mine[i].title,ti)){ o=byId[id]=mine[i]; break; } } }
+      if(!o){ o=byId[id]={id:id,title:ti,link:x.link,why:x.why||x.note,due:x.due,since:x.since,
+                          key:x.key,stalled:stalledOf(x,x.key?dk("t-"+ti):null),src:{}}; mine.push(o); }
+      if(src!=="urgent"){ o.title=ti; o.due=o.due||x.due; o.since=o.since||x.since; o.key=o.key||x.key; }
+      o.why=o.why||x.why||x.note; o.link=o.link||x.link;
+      if(o.stalled==null) o.stalled=stalledOf(x,x.key?dk("t-"+ti):null);
+      o.src[src]=1;
+    }
+    (b.urgent||[]).forEach(function(x){ addMine(x,x.title||"","urgent"); });
+    ((t&&t.p1)||[]).forEach(function(x){ addMine(x,x.title||"","p1"); });
+    ((t&&t.overdue)||[]).forEach(function(x){ addMine(x,x.title||"","overdue"); });
+    if(mine.length){
+      var mDone=0;
+      var mineHtml=mine.map(function(o){
+        var k=dk("t-"+o.title), dn=doneMap[k]; if(dn) mDone++;
+        var dot=o.stalled!=null?'<span class="agedot '+ageCls(o.stalled)+'" title="parado há '+o.stalled+'d"></span>':"";
+        var lab=o.src.overdue?'<span class="lab over">overdue</span>':(o.src.urgent?'<span class="lab p1">urgente</span>':'<span class="lab p1">P1</span>');
+        var sub=o.why||(o.due?"vence "+esc(o.due):(o.since?"desde "+esc(o.since):""));
+        return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,o.title)+dot+lab+linkify(esc(o.title),o.link)+staleBadge(o.key?dk("t-"+o.title):k)+
+               (sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>';
+      }).join("");
+      tabs.push({key:"comigo",label:"🔴 Comigo",n:mine.length-mDone,html:mineHtml});
     }
     if(Array.isArray(b.decisions)&&b.decisions.length){
-      tabs.push({key:"decisoes",label:"🟡 Decisões",n:b.decisions.length,html:
-        b.decisions.map(function(x){
+      var decs=b.decisions.filter(function(x){ return !isOne(x,x.title); });
+      if(decs.length) tabs.push({key:"decidir",label:"🟡 Decidir",n:decs.length,html:
+        decs.map(function(x){
           return '<div class="row"><div class="ti">'+linkify(esc(x.title||""),x.link)+'</div>'+(x.note?'<div class="why">'+esc(x.note)+'</div>':'')+'</div>';
         }).join("")});
     }
-    var ib=b.inbox||null;
-    if(ib&&(ib.waiting||[]).length){
-      tabs.push({key:"cobrar",label:"⏳ Cobrar",n:ib.waiting.length,html:
-        ib.waiting.map(function(x){
-          var meta=(x.sent_days!=null?'<span class="age">há '+esc(x.sent_days)+'d</span>':'')+(x.nudge?'<span class="nudge">cobrar</span>':'');
-          return '<div class="mail"><div class="mail-top">'+mailTags("p/ "+(x.to||""),x.topic)+meta+'</div>'+mailSubj(x,true)+'</div>';
-        }).join("")});
-    }
+    // "Com outro": a bola está fora — cobranças enviadas + followups frios, mesma pergunta
+    var ib=b.inbox||null, outros="", nOut=0;
+    ((ib&&ib.waiting)||[]).forEach(function(x){
+      nOut++;
+      var meta=(x.sent_days!=null?'<span class="age">há '+esc(x.sent_days)+'d</span>':'')+(x.nudge?'<span class="nudge">cobrar</span>':'');
+      outros+='<div class="mail"><div class="mail-top">'+mailTags("p/ "+(x.to||""),x.topic)+meta+'</div>'+mailSubj(x,true)+'</div>';
+    });
+    ((t&&t.cold_followups)||[]).forEach(function(x){
+      nOut++;
+      outros+='<div class="tk">'+'<span class="lab fu">followup '+(x.days!=null?esc(x.days)+"d":"")+'</span>'+linkify(esc(x.name||""),x.link)+
+              (x.context?'<div class="sub">'+esc(x.context)+'</div>':'')+'</div>';
+    });
+    if(nOut) tabs.push({key:"outro",label:"⏳ Com outro",n:nOut,html:outros});
     if(ib){
       var nr=(ib.respond||[]).length, nu=(ib.unread||[]).length, cbody="";
       if(nr){ cbody+='<div class="lane"><div class="lane-h" style="color:var(--red)">🔴 Sua vez — responder</div>'+
@@ -906,8 +966,8 @@
           return '<div class="row"><div class="ti">'+linkify('<span class="dot">'+dotc+'</span>'+(x.from?'<b>'+esc(x.from)+'</b> — ':'')+esc(x.subject||""),x.link)+'</div>'+(x.action?'<div class="why">'+esc(x.action)+'</div>':'')+'</div>'; }).join("")});
     }
     if(tabs.length){
-      var hasUrg=tabs.some(function(tb){return tb.key==="urgente";});
-      var act=(!window.__tabInit&&hasUrg)?"urgente":(activeTab&&tabs.some(function(tb){return tb.key===activeTab;})?activeTab:tabs[0].key);
+      var hasUrg=tabs.some(function(tb){return tb.key==="comigo";});
+      var act=(!window.__tabInit&&hasUrg)?"comigo":(activeTab&&tabs.some(function(tb){return tb.key===activeTab;})?activeTab:tabs[0].key);
       window.__tabInit=true; activeTab=act;
       var bar=tabs.map(function(tb){ return '<button class="tab-btn'+(tb.key===act?" active":"")+'" data-tab="'+tb.key+'">'+tb.label+(tb.n!=null?' <b>'+tb.n+'</b>':'')+'</button>'; }).join("");
       var panels=tabs.map(function(tb){ return '<div class="tab-panel" data-panel="'+tb.key+'"'+(tb.key===act?"":" hidden")+'>'+tb.html+'</div>'; }).join("");
@@ -928,19 +988,8 @@
     } else ag='<div class="empty">Sem agenda.</div>';
     h+=card("📅 Agenda · 3 dias","",ag);
 
-    var tk="", tTot=0, tDone=0;
-    function tkRow(lab,labCls,title,link,sub,key,item){
-      if(title===oneTitle) return "";           // §9 dedupe — vive só no card Única Coisa
-      var k=dk("t-"+title), dn=doneMap[k]; tTot++; if(dn) tDone++;
-      // §3 envelhecimento visual: cinco P1 idênticos = nenhum P1; a idade diferencia
-      var sd=stalledOf(item,key||k), dot=sd!=null?'<span class="agedot '+ageCls(sd)+'" title="parado há '+sd+'d"></span>':"";
-      return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,title)+dot+'<span class="lab '+labCls+'">'+lab+'</span>'+linkify(esc(title),link)+staleBadge(key||k)+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
-    }
-    (t.p1||[]).forEach(function(x){tk+=tkRow("P1","p1",x.title,x.link,x.due?"vence "+esc(x.due):"",x.key,x);});
-    (t.overdue||[]).forEach(function(x){tk+=tkRow("overdue","over",x.title,x.link,x.since?"desde "+esc(x.since):"",x.key,x);});
-    (t.cold_followups||[]).forEach(function(x){tk+=tkRow("followup "+(x.days!=null?x.days+"d":""),"fu",x.name,x.link,x.context?esc(x.context):"",null,x);});
-    if(!tk) tk='<div class="empty">Nada pendente.</div>';
-    h+=card("📋 Tasks",tTot?'<span class="badge" style="background:rgba(21,128,61,.12);color:var(--green)">✓ '+tDone+'/'+tTot+'</span>':"",tk);
+    // 📋 Tasks foi absorvido pela Central (raia "Comigo") — era o mesmo item por outro
+    // ângulo. Um item, um lugar, uma vez.
 
     if(d.new_pages||d.new_decisions!=null||d.meetings!=null){
       var chips=(d.new_pages||[]).map(function(p){
