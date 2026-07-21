@@ -306,6 +306,27 @@
 .sdot.late{background:var(--orange)}
 .sdot.idle{background:var(--muted);opacity:.5}
 .ftile.alert{border-color:var(--orange);background:var(--orange-bg)}
+.ftile{cursor:pointer}
+.ftile:hover{border-color:var(--accent)}
+.ftile.open{border-color:var(--accent);background:var(--card)}
+.ag-detail{margin-top:8px;border-top:1px solid var(--line);padding-top:9px}
+.ag-detail .role{font-size:12px;color:var(--muted);line-height:1.4}
+.ag-detail .last{font-size:12.5px;margin-top:7px;line-height:1.45}
+.ag-detail .last b{font-weight:700}
+/* caixa de prompt — instrui um agente / pergunta sobre um item */
+.pbox{display:flex;gap:6px;margin-top:9px}
+.pbox textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  font:13px/1.4 inherit;padding:8px 10px;resize:vertical;outline:none;min-height:38px}
+.pbox textarea:focus{border-color:var(--accent)}
+.pbox button{border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;padding:0 13px;cursor:pointer;white-space:nowrap}
+.pbox button:active{transform:scale(.97)}
+.phint{font-size:10.5px;color:var(--muted);margin-top:5px;font-style:italic}
+/* detalhe expansível de um item da Central */
+.tk-q{border:0;background:transparent;color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:6px;margin-left:6px}
+.tk-q:hover{background:rgba(120,120,128,.14);color:var(--accent)}
+.tk-detail{margin-top:7px;padding:9px 11px;background:var(--bg);border-radius:10px}
+.tk-detail .dt{font-size:12.5px;line-height:1.5}
+.tk-detail .none{font-size:12px;color:var(--muted);font-style:italic}
 /* 🗂️ Biblioteca — notas e outputs do Claude */
 .libbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .libbtn{border:0;border-radius:11px;background:rgba(120,120,128,.14);color:var(--ink);font-size:12.5px;font-weight:700;padding:8px 13px;cursor:pointer}
@@ -709,25 +730,49 @@
     return '<div class="spark">🧠 <b>'+(b.spark.link?linkify(esc(b.spark.title),b.spark.link):esc(b.spark.title))+'</b></div>';
   }
 
-  // 🤖 Frota — 4 tiles no topo. Silêncio = saúde: só quem NÃO rodou ganha destaque.
+  // 🤖 Agentes — 4 tiles. Silêncio = saúde: só quem NÃO rodou ganha destaque.
+  // Tile abre em detalhe: papel, último output e caixa para instruir o agente.
   function hoursSince(iso){ return iso?((Date.now()-new Date(iso).getTime())/3600000):null; }
+  // fleet aceita ISO cru (contrato 1.x) ou objeto {last,summary,url} (contrato novo)
+  function agInfo(v){
+    if(!v) return {last:null};
+    if(typeof v==="string") return {last:v};
+    return {last:v.last||v.at||null, summary:v.summary, url:v.url};
+  }
+  var AG=[
+    {k:"cos",  emoji:"🌅", nome:"Chief of Staff", cad:"cloud · 6h30 diário", lim:26,
+     papel:"Autor do brief: prioriza teus blockers, escolhe a Única Coisa pela pergunta do dominó e denuncia quem da frota não rodou."},
+    {k:"executor", emoji:"🧹", nome:"Executor", cad:"local · 18h15 úteis", lim:30,
+     papel:"Cata o burocrático travado (cobranças, contratos, follow-ups) e deixa rascunhos prontos — nunca envia nada sozinho."},
+    {k:"conselheiro", emoji:"♟️", nome:"Conselheiro", cad:"local · sexta 19h", lim:8*24,
+     papel:"Consolida a semana com evidência: decisões evaporadas, tasks escorregando, padrões — e propõe mudanças estruturais."},
+    {k:"guardiao", emoji:"🛡️", nome:"Guardião", cad:"sob demanda", lim:null,
+     papel:"Revisa output executivo contra as 3 lacunas: auto-desconto, escopo demais, pedido ausente."}
+  ];
   function fleetTiles(b,s0){
     var fl=b.fleet||{};
-    var cosIso=(s0.briefing&&s0.briefing.createdAt)||null, cosH=hoursSince(cosIso);
-    var exH=hoursSince(fl.executor), coH=hoursSince(fl.conselheiro);
-    function tile(emoji,nome,st,txt){
-      return '<div class="ftile'+(st==="late"?" alert":"")+'"><div class="n"><span class="sdot '+st+'"></span>'+emoji+' '+esc(nome)+'</div>'+
-             '<div class="st">'+esc(txt)+'</div></div>';
-    }
     // sem timestamp ≠ falhou: o dashboard só sabe o que o payload conta. Alarme só com
-    // dado que comprove atraso — senão a Frota gritaria todo dia em que a rotina omitisse fleet.
-    function st(h2,lim){ return h2==null?"idle":(h2<lim?"ok":"late"); }
-    var t="";
-    t+=tile("🌅","Chief of Staff", st(cosH,26),   cosIso?("brief "+ago(cosIso)):"sem registro");
-    t+=tile("🧹","Executor",       st(exH,30),    fl.executor?ago(fl.executor):"sem registro");
-    t+=tile("♟️","Conselheiro",    st(coH,8*24),  fl.conselheiro?ago(fl.conselheiro):"sem registro");
-    t+=tile("🛡️","Guardião","idle","sob demanda");
-    return card("🤖 Frota","",'<div class="fleet4">'+t+'</div>');
+    // dado que comprove atraso — senão os Agentes gritariam todo dia em que a rotina omitisse fleet.
+    function stOf(h2,lim){ return lim==null?"idle":(h2==null?"idle":(h2<lim?"ok":"late")); }
+    var open=window.__agOpen||null, t="", det="";
+    AG.forEach(function(a){
+      var info=agInfo(a.k==="cos"?((s0.briefing&&s0.briefing.createdAt)||fl.cos):fl[a.k]);
+      var h2=hoursSince(info.last), st=stOf(h2,a.lim);
+      var txt=a.lim==null?"sob demanda":(info.last?ago(info.last):"sem registro");
+      t+='<div class="ftile'+(st==="late"?" alert":"")+(open===a.k?" open":"")+'" data-ag="'+a.k+'">'+
+         '<div class="n"><span class="sdot '+st+'"></span>'+a.emoji+' '+esc(a.nome)+'</div>'+
+         '<div class="st">'+esc(txt)+'</div></div>';
+      if(open===a.k){
+        det='<div class="ag-detail"><div class="role">'+esc(a.cad)+' — '+esc(a.papel)+'</div>';
+        if(info.summary) det+='<div class="last"><b>Último:</b> '+esc(info.summary)+
+                              (info.url?' <a class="lnk" href="'+esc(info.url)+'" target="_blank" rel="noopener">abrir ↗</a>':'')+'</div>';
+        else det+='<div class="last" style="color:var(--muted)">Resumo do último trabalho aparece quando a rotina emitir <code>fleet.'+esc(a.k)+'.summary</code>.</div>';
+        det+='<div class="pbox"><textarea id="agP" rows="2" placeholder="instruir '+esc(a.nome)+'…"></textarea>'+
+             '<button type="button" data-agsend="'+a.k+'">enviar</button></div>'+
+             '<div class="phint">Vai para a fila do agente — ele lê na próxima rodada ('+esc(a.cad)+').</div></div>';
+      }
+    });
+    return card("🤖 Agentes","",'<div class="fleet4">'+t+'</div>'+det);
   }
 
   // 🗂️ Biblioteca — notas + .md importados + outputs do Claude Code/Cowork.
@@ -908,7 +953,8 @@
       var o=byId[id];
       if(!o){ for(var i=0;i<mine.length;i++){ if(sameItem(mine[i].title,ti)){ o=byId[id]=mine[i]; break; } } }
       if(!o){ o=byId[id]={id:id,title:ti,link:x.link,why:x.why||x.note,due:x.due,since:x.since,
-                          key:x.key,stalled:stalledOf(x,x.key?dk("t-"+ti):null),src:{}}; mine.push(o); }
+                          key:x.key,detail:x.detail,stalled:stalledOf(x,x.key?dk("t-"+ti):null),src:{}}; mine.push(o); }
+      o.detail=o.detail||x.detail;
       if(src!=="urgent"){ o.title=ti; o.due=o.due||x.due; o.since=o.since||x.since; o.key=o.key||x.key; }
       o.why=o.why||x.why||x.note; o.link=o.link||x.link;
       if(o.stalled==null) o.stalled=stalledOf(x,x.key?dk("t-"+ti):null);
@@ -919,13 +965,25 @@
     ((t&&t.overdue)||[]).forEach(function(x){ addMine(x,x.title||"","overdue"); });
     if(mine.length){
       var mDone=0;
+      var qOpen=window.__qOpen||null;
       var mineHtml=mine.map(function(o){
         var k=dk("t-"+o.title), dn=doneMap[k]; if(dn) mDone++;
         var dot=o.stalled!=null?'<span class="agedot '+ageCls(o.stalled)+'" title="parado há '+o.stalled+'d"></span>':"";
         var lab=o.src.overdue?'<span class="lab over">overdue</span>':(o.src.urgent?'<span class="lab p1">urgente</span>':'<span class="lab p1">P1</span>');
         var sub=o.why||(o.due?"vence "+esc(o.due):(o.since?"desde "+esc(o.since):""));
+        var det="";
+        if(qOpen===o.id){
+          det='<div class="tk-detail">'+
+            (o.detail?'<div class="dt">'+esc(o.detail)+'</div>'
+                     :'<div class="none">Sem detalhamento no brief. A rotina passa a mandar o contexto e o link da fonte a partir de amanhã.</div>')+
+            (o.link?'<div style="margin-top:6px"><a class="lnk" href="'+esc(o.link)+'" target="_blank" rel="noopener">abrir fonte ↗</a></div>':'')+
+            '<div class="pbox"><textarea id="qP" rows="2" placeholder="o que é essa task? o que preciso fazer aqui?"></textarea>'+
+            '<button type="button" data-qsend="'+esc(o.id)+'" data-qtitle="'+esc(o.title)+'">perguntar</button></div>'+
+            '<div class="phint">Resposta no brief de amanhã de manhã — o CoS responde com o vault inteiro lido.</div></div>';
+        }
         return '<div class="tk'+(dn?' done-item':'')+'">'+chk(k,o.title)+dot+lab+linkify(esc(o.title),o.link)+staleBadge(o.key?dk("t-"+o.title):k)+
-               (sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>';
+               '<button class="tk-q" type="button" data-q="'+esc(o.id)+'" title="detalhes e perguntas">'+(qOpen===o.id?"▾":"?")+'</button>'+
+               (sub?'<div class="sub">'+esc(sub)+'</div>':'')+det+'</div>';
       }).join("");
       tabs.push({key:"comigo",label:"🔴 Comigo",n:mine.length-mDone,html:mineHtml});
     }
@@ -1101,6 +1159,46 @@
       pushCount[pk]=(pushCount[pk]||0)+1; savePushCount();
       try{ localStorage.setItem(pushedKey,JSON.stringify(pushedMap)); }catch(err){}
       mAct("push"); flushCap(); if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🤖 abrir/fechar detalhe de um agente
+    var agt=e.target.closest&&e.target.closest("[data-ag]");
+    if(agt&&!e.target.closest("[data-agsend]")){
+      var ak2=agt.getAttribute("data-ag");
+      window.__agOpen=(window.__agOpen===ak2)?null:ak2;
+      if(window.__snap) render(window.__snap);
+      return;
+    }
+    // 🤖 instruir um agente — vira captura para[<agente>], lida na próxima rodada dele
+    var ags=e.target.closest&&e.target.closest("[data-agsend]");
+    if(ags){
+      var who=ags.getAttribute("data-agsend"), ta=$("agP"), v=((ta&&ta.value)||"").trim();
+      if(!v){ toast("Escreva a instrução primeiro."); return; }
+      var q5=readQ();
+      q5.push({id:capId(),text:"para["+who+"]: "+v,capturedAt:new Date().toISOString(),source:"dashboard-agente"});
+      writeQ(q5); mAct("prompt"); flushCap();
+      window.__agOpen=null; toast("✓ Na fila do agente");
+      if(window.__snap) render(window.__snap);
+      return;
+    }
+    // ❓ abrir/fechar detalhe de um item da Central
+    var qb=e.target.closest&&e.target.closest("[data-q]");
+    if(qb){
+      var qid=qb.getAttribute("data-q");
+      window.__qOpen=(window.__qOpen===qid)?null:qid;
+      if(window.__snap) render(window.__snap);
+      return;
+    }
+    // ❓ perguntar sobre um item — vira captura ask[…], respondida no brief seguinte
+    var qs=e.target.closest&&e.target.closest("[data-qsend]");
+    if(qs){
+      var qti=qs.getAttribute("data-qtitle")||"", tq=$("qP"), qv=((tq&&tq.value)||"").trim();
+      if(!qv){ toast("Escreva a pergunta primeiro."); return; }
+      var q6=readQ();
+      q6.push({id:capId(),text:"ask["+qti+"]: "+qv,capturedAt:new Date().toISOString(),source:"dashboard-ask"});
+      writeQ(q6); mAct("prompt"); flushCap();
+      window.__qOpen=null; toast("✓ Pergunta na fila — resposta no brief");
+      if(window.__snap) render(window.__snap);
       return;
     }
     // 🗂️ biblioteca — ver conteúdo de um doc local (ainda sem .md no cofre)
