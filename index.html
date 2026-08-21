@@ -1452,7 +1452,7 @@
     writeQ(readQ().filter(function(x){return x.id!==id;}));  // se já foi enviada, deixa — caso raro
   }
   // done: e doc[...] são write-back, não caixa de entrada — não contam no badge nem no card Capturado
-  function silent(src){ return src==="dashboard-done"||src==="dashboard-doc"; }
+  function silent(src){ return src==="dashboard-done"||src==="dashboard-doc"||src==="dashboard-metrics"; }
   function updFab(){ var n=readQ().filter(function(x){return !silent(x.source);}).length, b=$("fabQ"); if(!b)return; if(n>0){ b.textContent=n; b.hidden=false; } else b.hidden=true; }
   // capturas a exibir = fila local (ainda enviando) + pendentes no backend (aguardando triagem), sem duplicar
   function capsForDisplay(){
@@ -1567,6 +1567,55 @@
     var tag=(e.target&&e.target.tagName)||"";
     if((e.key==="n"||e.key==="N")&&!/^(INPUT|TEXTAREA)$/.test(tag)&&$("cap").hidden&&$("gate").hidden){ e.preventDefault(); openCap(); }
   });
+  // 📈 POST semanal das métricas (Onda 3, item c) — sexta, a partir das 18h.
+  // A instrumentação da §8 vive só no localStorage e expira em 21 dias; sem este
+  // envio o Conselheiro consolida a semana no escuro (ele lê outputs/metrics/,
+  // que a rotina escreve a partir desta captura). Vai pela MESMA fila idempotente
+  // das capturas — id determinístico pela sexta, então reabrir a página não
+  // duplica e ficar offline não perde.
+  function metricsFor(dstr){ try{ return JSON.parse(localStorage.getItem("orbital_metrics_"+dstr)||"null"); }catch(e){ return null; } }
+  function median(arr){
+    if(!arr.length) return null;
+    var a=arr.slice().sort(function(x,y){return x-y;}), h=Math.floor(a.length/2);
+    return a.length%2 ? a[h] : Math.round((a[h-1]+a[h])/2);
+  }
+  function weeklyMetrics(){
+    var now=new Date();
+    if(now.getDay()!==5 || now.getHours()<18) return;         // só sexta, depois das 18h
+    var id="metrics-"+todayStr(), SENT="orbital_metrics_sent_"+id;
+    try{ if(localStorage.getItem(SENT)) return; }catch(e){}
+    if(readQ().some(function(x){ return x.id===id; })) return;
+    var days=[], tot={opens:0,actions:0,pushes:0,kills:0,closes:0,expands:0}, ativ=[], comAcao=0;
+    var d=new Date(now); d.setDate(d.getDate()-6); var from=null;
+    for(var i=0;i<7;i++){
+      var k=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+      if(i===0) from=k;
+      var m=metricsFor(k);
+      if(m){
+        var row={d:k,opens:m.opens||0,actions:m.actions||0,pushes:m.pushes||0,
+                 kills:m.kills||0,closes:m.closes||0,expands:m.expands||0};
+        if(m.activation_s!=null){ row.activation_s=m.activation_s; ativ.push(m.activation_s); }
+        days.push(row);
+        for(var kk in tot){ if(tot.hasOwnProperty(kk)) tot[kk]+=row[kk]||0; }
+        if(row.actions>0) comAcao++;
+      }
+      d.setDate(d.getDate()+1);
+    }
+    if(!days.length) return;                                   // nada registrado: nada a contar
+    var payload={week_end:todayStr(), from:from, to:todayStr(), days:days, totals:tot,
+                 days_with_action:comAcao, median_activation_s:median(ativ),
+                 resumo:comAcao+"/7 dias com ação · "+tot.closes+" fechamentos · "+
+                        tot.pushes+" pushes · "+tot.kills+" kills"+
+                        (median(ativ)!=null?" · ativação "+median(ativ)+"s":"")};
+    var q=readQ();
+    q.push({id:id, text:"metrics: "+JSON.stringify(payload),
+            capturedAt:new Date().toISOString(), source:"dashboard-metrics"});
+    writeQ(q);
+    try{ localStorage.setItem(SENT,"1"); }catch(e){}
+    flushCap();
+  }
+  weeklyMetrics();
+
   updFab();
 
   $("btnBrief").addEventListener("click",function(){ showModalMd(lastBrief||"(sem brief)"); });
